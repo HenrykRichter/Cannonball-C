@@ -8,40 +8,39 @@ The code is intended as a base for less powerful platforms that have
 non-existent or poor C++ compilers, like old consoles, computers, etc.
     
 Codebase is based on the source at https://github.com/djyt/cannonball taken 
-early September 2015.
+early September 2015. 
+
+Credits & Support
+-----------------
+
+The conversion to C was done by djcc over at the Reassembler forums 
+(http://reassembler.game-host.org/). Lantus360 (Modern Vintage Gamer)
+did the initial Amiga port of the SDL codebase.
+
+This fork is dedicated to a native AmigaOS/68k version and does no 
+longer use SDL.
     
-Conversion Notes
-----------------
+Conversion and Porting Notes
+----------------------------
     
     - All code converted from C++ to C
     - Removed STL
     - Removed Boost (which disables Cannonboard support)
     - Removed directx, (which disables force feedback)
-    - Everything else should still work (SDL, OpenGL, Layout support, etc)
+    - Removed SDL
+    - Added Picasso96 drawing layer
+    - re-enabled tile (mainly clouds) rendering
+    - rewrote lots of internal routines for higher performance,
+      partially in 68k asm code
+    - due to the multiple rendering layers and the multitude of 
+      sprites, this game requires very fast 68k CPU (68060 or Vampire)
 
 Known Issues
 ----------------
 
-    Still has issue in visual studio where sdl linker path is wrong. Don't know
-    enough about cmake to know how to fix it in script.
-    
-        Manual fix: change lib/SDL-1.2.15/lib/${Configuration} 
-                 to lib/SDL-1.2.15/lib/x86
-                 after the solution is built
+    - not all config options are working
+    - music is only available in game
+    - no sound FX supported
              
-             
-Multiplatform Notes
-----------------
-
-    Only tested on Windows. I converted the cmake files for other platforms 
-    I don't really know if they still work             
-    
-Credits & Support
-----------------
-
-    Conversion to C by djcc. 
-    
-    He can be contacted on the Reassembler forums. 
-    http://reassembler.game-host.org/
-    
+   
     
