@@ -7,8 +7,8 @@
     Copyright Chris White.
     See license.txt for more details.
 ***************************************************************************/
-
-#pragma once
+#ifndef _INC_SRC_MAIN_ENGINE_OUTILS_H
+#define _INC_SRC_MAIN_ENGINE_OUTILS_H
 
 #include "stdint.h"
 
@@ -29,4 +29,4 @@ void outils_sub16(int32_t src, int32_t* dst);
 void outils_swap32(int32_t* v);
 void outils_swapU32(uint32_t* v);
 void outils_convert_counter_to_time(uint16_t counter, uint8_t* converted);
-
+#endif

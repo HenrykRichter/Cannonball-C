@@ -1,3 +1,5 @@
+#ifndef _INC_MAIN_ENGINE_AUDIO_OSOUNDADR_H
+#define _INC_MAIN_ENGINE_AUDIO_OSOUNDADR_H
 /***************************************************************************
     Z80 Program Code Addresses. 
     Addresses to data within the Z80 Program ROM.
@@ -10,8 +12,6 @@
     Copyright Chris White.
     See license.txt for more details.
 ***************************************************************************/
-
-#pragma once
 
 // FM Note & Octave Lookup Table
 const static uint16_t z80_adr_YM_NOTE_OCTAVE = 0xAC9;
@@ -101,3 +101,5 @@ const static uint16_t z80_adr_ENGINE_ADR_TABLE = 0x7951;
 
 // Traffic Volume Multiply Table. How much to increase traffic volume by dependent on distance.
 const static uint16_t z80_adr_TRAFFIC_VOL_MULTIPLY = 0x7CEF;
+
+#endif

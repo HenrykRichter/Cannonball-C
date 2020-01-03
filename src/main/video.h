@@ -8,8 +8,8 @@
     Copyright Chris White.
     See license.txt for more details.
 ***************************************************************************/
-
-#pragma once
+#ifndef _INC_SRC_MAIN_VIDEO_H
+#define _INC_SRC_MAIN_VIDEO_H
 
 
 #include "stdint.h"
@@ -58,3 +58,5 @@ uint8_t Video_read_pal8(uint32_t);
 uint16_t Video_read_pal16IncP(uint32_t*);
 uint16_t Video_read_pal16(uint32_t);
 uint32_t Video_read_pal32(uint32_t*);
+
+#endif

@@ -10,8 +10,8 @@
     Copyright Chris White.
     See license.txt for more details.
 ***************************************************************************/
-
-#pragma once
+#ifndef _INC_SRC_MAIN_ENGINE_OHUD_H
+#define _INC_SRC_MAIN_ENGINE_OHUD_H
 
 #include "outrun.h"
 
@@ -51,3 +51,5 @@ void OHud_draw_insert_coin();
 void OHud_draw_credits();
 uint32_t OHud_setup_mini_map();
 uint32_t OHud_translate(uint16_t x, uint16_t y, uint32_t BASE_POS);
+
+#endif

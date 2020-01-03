@@ -16,8 +16,8 @@
     Copyright Chris White.
     See license.txt for more details.
 ***************************************************************************/
-
-#pragma once
+#ifndef _INC_SRC_MAIN_ENGINE_OFERRARI_H
+#define _INC_SRC_MAIN_ENGINE_OFERRARI_H
 
 #include "outrun.h"
 
@@ -211,4 +211,5 @@ void OFerrari_do_sound_score_slip();
 void OFerrari_shake();
 void OFerrari_do_skid();
     
+#endif
 

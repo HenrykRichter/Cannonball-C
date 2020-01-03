@@ -17,10 +17,8 @@
     Copyright Chris White.
     See license.txt for more details.
 ***************************************************************************/
-
-
-#pragma once
-
+#ifndef _INC_SRC_MAIN_ENGINE_OROAD_H
+#define _INC_SRC_MAIN_ENGINE_OROAD_H
 
 
 extern uint32_t ORoad_road_pos;        // 0x6: Current Road Position (addressed as long and word)
@@ -157,4 +155,4 @@ void ORoad_tick();
 uint8_t ORoad_get_view_mode();
 int16_t ORoad_get_road_y(uint16_t);
 void ORoad_set_view_mode(uint8_t, Boolean);
-
+#endif

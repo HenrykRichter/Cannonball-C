@@ -9,8 +9,8 @@
     
     See http://mamedev.org/source/docs/license.txt for more details.
 ***************************************************************************/
-
-#pragma once
+#ifndef _SRC_MAIN_HWAUDIO_SEGAPCM_H
+#define _SRC_MAIN_HWAUDIO_SEGAPCM_H
 
 #include "stdint.h"
 #include "romloader.h"
@@ -36,3 +36,4 @@ void SegaPCM_init(int32_t fps);
 void SegaPCM_stream_update();
 int16_t* SegaPCM_get_buffer();
 void SegaPCM_set_volume(uint8_t);
+#endif

@@ -9,8 +9,8 @@
     
     See http://mamedev.org/source/docs/license.txt for more details.
 ***************************************************************************/
-
-#pragma once
+#ifndef _INC_SRC_MAIN_HWAUDIO_YM2151_H
+#define _INC_SRC_MAIN_HWAUDIO_YM2151_H
 
 #include "stdint.h"
 #include "romloader.h"
@@ -79,4 +79,4 @@ void YM_set_volume(uint8_t);
 
 void YM_write_reg(int r, int v);
 uint32_t YM_read_status();
-
+#endif

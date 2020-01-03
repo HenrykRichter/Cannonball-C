@@ -1,33 +1,85 @@
 # Project: Cannonball
-# Compiler: m68k-Amiga-OS3
-# Compiler Type: MingW 3
-# Makefile created by wxDev-C++ 6.10.2 on 07/07/17 09:41
+# Compiler: m68k-amigaos-gcc, vasm
+# Compiler Type: cross
+#
+# compiled with -noixemul, hence default include path somewhere like
+# <INSTALL_PREFIX>/m68k-amigaos/libnix/include, build assumes that 
+# SDL includes are also there i.e. 
+# <INSTALL_PREFIX>/m68k-amigaos/libnix/include/SDL/
+# Even the non SDL build will refer to SDL includes, due to some
+# shared definitions.
+#
 
-CPP       = m68k-amigaos-g++.exe
-CC        = m68k-amigaos-gcc.exe
-WINDRES   = windres.exe
-OBJ       = obj/audio.o obj/input.o obj/rendersw.o obj/timer.o obj/hwroad.o obj/hwsprites.o obj/hwtiles.o obj/segapcm.o obj/ym2151.o obj/config.o obj/menu.o obj/ttrial.o obj/osound.o obj/osoundint.o obj/oanimseq.o obj/oattractai.o obj/obonus.o obj/ocrash.o obj/oentry.o obj/oferrari.o obj/ohiscore.o obj/ohud.o obj/oinitengine.o obj/oinputs.o obj/olevelobjs.o obj/ologo.o obj/omap.o obj/omusic.o obj/ooutputs.o obj/opalette.o obj/oroad.o obj/osmoke.o obj/osprite.o obj/osprites.o obj/ostats.o obj/otiles.o obj/otraffic.o obj/outils.o obj/outrun.o obj/asyncserial.o obj/interface.o obj/main.o obj/romloader.o obj/roms.o obj/trackloader.o obj/utils.o obj/video.o obj/xmlutils.o obj/crc.o obj/sxmlc.o obj/sxmlsearch.o obj/midimusic.o obj/amiga_timer.o obj/amiga_video.o
-LINKOBJ   = obj/audio.o obj/input.o obj/rendersw.o obj/timer.o obj/hwroad.o obj/hwsprites.o obj/hwtiles.o obj/segapcm.o obj/ym2151.o obj/config.o obj/menu.o obj/ttrial.o obj/osound.o obj/osoundint.o obj/oanimseq.o obj/oattractai.o obj/obonus.o obj/ocrash.o obj/oentry.o obj/oferrari.o obj/ohiscore.o obj/ohud.o obj/oinitengine.o obj/oinputs.o obj/olevelobjs.o obj/ologo.o obj/omap.o obj/omusic.o obj/ooutputs.o obj/opalette.o obj/oroad.o obj/osmoke.o obj/osprite.o obj/osprites.o obj/ostats.o obj/otiles.o obj/otraffic.o obj/outils.o obj/outrun.o obj/asyncserial.o obj/interface.o obj/main.o obj/romloader.o obj/roms.o obj/trackloader.o obj/utils.o obj/video.o obj/xmlutils.o obj/crc.o obj/sxmlc.o obj/sxmlsearch.o obj/midimusic.o obj/amiga_timer.o obj/amiga_video.o
-LIBS      = -L"C:/Development/AmiDevCpp/usr/local/amiga/m68k-amigaos/lib" -L"C:/Development/AmiDevCpp/usr/local/amiga/m68k-amigaos/lib/libb/libnix" -s -noixemul -noixemul src/main/amiga/PTPlay30B.o  -s 
-INCS      = -I"C:/Development/AmiDevCpp/usr/local/amiga/m68k-amigaos/sys-include" -I"C:/Development/AmiDevCpp/usr/local/amiga/m68k-amigaos/sys-include/SDL" -I"src/main" -I"src/main/SDL" -I"src/main/Amiga"
-CXXINCS   = -I"C:/Development/AmiDevCpp/usr/local/amiga/m68k-amigaos/sys-include" -I"C:/Development/AmiDevCpp/usr/local/amiga/m68k-amigaos/sys-include/SDL" -I"src/main" -I"src/main/SDL" -I"src/main/Amiga"
-RCINCS    = --include-dir "C:/DEVELO~1/AMIDEV~1/include"
-BIN       = release/Cannonball-C.exe
-DEFINES   =  -D_AMIGA_
-CXXFLAGS  = $(CXXINCS) $(DEFINES)    -s -noixemul -fexpensive-optimizations -O3
-CFLAGS    = $(INCS) $(DEFINES) -m68020-60 -msoft-float -fomit-frame-pointer   -s -noixemul -fexpensive-optimizations -O3
-GPROF     = gprof.exe
+# don't link SDL and use Amiga-specific input/output/timer
+NOSDL=1
+
+VASM      = vasmm68k_mot
+CPP       = m68k-amigaos-g++
+CC        = m68k-amigaos-gcc 
+
+OBJ       = obj/audio.o obj/hwroad.o obj/hwsprites.o obj/hwtiles.o obj/segapcm.o obj/ym2151.o obj/menu.o obj/ttrial.o obj/osound.o obj/osoundint.o obj/oanimseq.o obj/oattractai.o obj/obonus.o obj/ocrash.o obj/oentry.o obj/oferrari.o obj/ohiscore.o obj/ohud.o obj/oinitengine.o obj/oinputs.o obj/olevelobjs.o obj/ologo.o obj/omap.o obj/omusic.o obj/ooutputs.o obj/opalette.o obj/oroad.o obj/osmoke.o obj/osprite.o obj/osprites.o obj/ostats.o obj/otiles.o obj/otraffic.o obj/outils.o obj/outrun.o obj/asyncserial.o obj/interface.o obj/main.o obj/romloader.o obj/roms.o obj/trackloader.o obj/utils.o obj/video.o obj/xmlutils.o obj/crc.o obj/sxmlc.o obj/sxmlsearch.o obj/midimusic.o src/main/amiga/PTPlay30B.o src/main/amiga/Sound.o obj/m68kroadrender.o obj/ammxtilerender.o obj/keyvalconfig.o obj/amigaconfig.o
+
+LINKOBJ   = obj/audio.o obj/hwroad.o obj/hwsprites.o obj/hwtiles.o obj/segapcm.o obj/ym2151.o obj/menu.o obj/ttrial.o obj/osound.o obj/osoundint.o obj/oanimseq.o obj/oattractai.o obj/obonus.o obj/ocrash.o obj/oentry.o obj/oferrari.o obj/ohiscore.o obj/ohud.o obj/oinitengine.o obj/oinputs.o obj/olevelobjs.o obj/ologo.o obj/omap.o obj/omusic.o obj/ooutputs.o obj/opalette.o obj/oroad.o obj/osmoke.o obj/osprite.o obj/osprites.o obj/ostats.o obj/otiles.o obj/otraffic.o obj/outils.o obj/outrun.o obj/asyncserial.o obj/interface.o obj/main.o obj/romloader.o obj/roms.o obj/trackloader.o obj/utils.o obj/video.o obj/xmlutils.o obj/crc.o obj/sxmlc.o obj/sxmlsearch.o obj/midimusic.o src/main/amiga/PTPlay30B.o src/main/amiga/Sound.o obj/m68kroadrender.o obj/ammxtilerender.o obj/keyvalconfig.o obj/amigaconfig.o
+
+LIBS      = -s -noixemul -s -lm
+INCS      = -I"src/main" -I"src/main/Amiga" -DUSE_TYPES_H
+BIN       = release/Cannonball
+DEFINES   =  -D_AMIGA_ -D_AMIGA_ASM_ -DNOCAMD 
+VASMINC   = -I/opt/amigaos-68k/os-include
+
+#
+ifneq   ($(NOSDL),0)
+OBJ     += obj/amigainput.o obj/amigatimer.o obj/amigarendersw.o obj/P96Screen.o
+LINKOBJ += obj/amigainput.o obj/amigatimer.o obj/amigarendersw.o obj/P96Screen.o
+DEFINES += -DNOSDL
+else
+OBJ     += obj/timer.o obj/input.o obj/rendersw.o
+LINKOBJ += obj/rendersw.o obj/input.o obj/timer.o
+LIBS    += -lSDL
+INCS    += -I"src/main/SDL"
+endif
+
+CFLAGS    = $(INCS) $(DEFINES) -m68060 -s -noixemul -fomit-frame-pointer -fexpensive-optimizations -Os
+#CFLAGS   += -pg
+#LIBS     += -pg
 RM        = rm -f
-LINK      = m68k-amigaos-g++.exe
+LINK      = m68k-amigaos-gcc
 
 .PHONY: all all-before all-after clean clean-custom
 all: all-before $(BIN) all-after
+
+install:	$(BIN)
+	cp $(BIN) /Applications/Emu/Work/Games/Cannonball/CannonBall
 
 clean: clean-custom
 	$(RM) $(OBJ) $(BIN)
 
 $(BIN): $(OBJ)
-	$(LINK) $(LINKOBJ) -o "release\Cannonball-C.exe" $(LIBS)
+	$(LINK) $(LINKOBJ) -o $@ $(LIBS)
+
+obj/%.o : src/main/amiga/%.s
+	$(VASM) $(VASMINC) -Faout -quiet -o $@ $< -I src/main/hwvideo -I src/main/amiga
+
+src/main/amiga/PTPlay30B.o: $(GLOBALDEPS) src/main/amiga/PTPlay30B.s
+	$(VASM) $(VASMINC) -Faout -quiet -o $@ $< 
+
+obj/keyvalconfig.o : $(GLOBALDEPS) src/main/amiga/keyvalconfig.c
+	$(CC) -c src/main/amiga/keyvalconfig.c -o $@ $(CFLAGS)
+
+obj/amigaconfig.o : $(GLOBALDEPS) src/main/amiga/amigaconfig.c
+	$(CC) -c src/main/amiga/amigaconfig.c -o $@ $(CFLAGS)
+
+obj/amigainput.o : $(GLOBALDEPS) src/main/amiga/amigainput.c
+	$(CC) -c src/main/amiga/amigainput.c -o $@ $(CFLAGS)
+
+obj/amigatimer.o : $(GLOBALDEPS) src/main/amiga/amigatimer.c
+	$(CC) -c src/main/amiga/amigatimer.c -o $@ $(CFLAGS)
+
+obj/amigarendersw.o : $(GLOBALDEPS) src/main/amiga/amigarendersw.c
+	$(CC) -c src/main/amiga/amigarendersw.c -o $@ $(CFLAGS)
+
+obj/P96Screen.o : $(GLOBALDEPS) src/main/amiga/P96Screen.c
+	$(CC) -c src/main/amiga/P96Screen.c -o $@ $(CFLAGS)
 
 obj/audio.o: $(GLOBALDEPS) src/main/sdl/audio.c
 	$(CC) -c src/main/sdl/audio.c -o obj/audio.o $(CFLAGS)
@@ -185,8 +237,4 @@ obj/sxmlsearch.o: $(GLOBALDEPS) src/main/thirdparty/sxmlc/sxmlsearch.c src/main/
 obj/midimusic.o: $(GLOBALDEPS) src/main/amiga/midimusic.c
 	$(CC) -c src/main/amiga/midimusic.c -o obj/midimusic.o $(CFLAGS)
 
-obj/amiga_timer.o: $(GLOBALDEPS) src/main/amiga/amiga_timer.c
-	$(CC) -c src/main/amiga/amiga_timer.c -o obj/amiga_timer.o $(CFLAGS)
 
-obj/amiga_video.o: $(GLOBALDEPS) src/main/amiga/amiga_video.c src/main/amiga/video.h
-	$(CC) -c src/main/amiga/amiga_video.c -o obj/amiga_video.o $(CFLAGS)

@@ -5,8 +5,8 @@
     Copyright Chris White.
     See license.txt for more details.
 ***************************************************************************/
-
-#pragma once
+#ifndef _INC_SRC_MAIN_ENGINE_OHISCORE_H
+#define _INC_SRC_MAIN_ENGINE_OHISCORE_H
 
 #include "stdint.h"
 
@@ -32,4 +32,4 @@ void OHiScore_tick();
 void OHiScore_setup_pal_best();
 void OHiScore_setup_road_best();
 void OHiScore_display_scores();
-
+#endif

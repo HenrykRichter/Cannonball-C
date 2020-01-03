@@ -143,9 +143,10 @@ void OMap_tick()
             {
                 if (--map_stage2 <= 0)
                 {   //map_end_route
+		    uint16_t route_info;
                     map_pos = 0;
                     map_stage1++;
-                    uint16_t route_info = OStats_routes[1 + map_stage1];
+                    route_info = OStats_routes[1 + map_stage1];
                     if (route_info)
                     {
                         map_route = RomLoader_read8(&Roms_rom0, MAP_ROUTE_LOOKUP + route_info);                      
@@ -422,12 +423,12 @@ void OMap_move_mini_car(oentry* sprite)
     {
         // Remember that the minimap is angled, so we still need to adjust both the x and y positions
         uint32_t movement_table = (map_route & 1) ? MAP_MOVEMENT_RIGHT : MAP_MOVEMENT_LEFT;
-        
+        int16_t y_change;
         int16_t pos = (map_stage1 < 4) ? map_pos : map_pos >> 1;
         pos <<= 1; // do not try to merge with previous line
 
         sprite->x += RomLoader_read16(&Roms_rom0, movement_table + pos);
-        int16_t y_change = RomLoader_read16(&Roms_rom0, movement_table + pos + 0x40);
+        y_change = RomLoader_read16(&Roms_rom0, movement_table + pos + 0x40);
         sprite->y -= y_change;
 
         if (y_change == 0)

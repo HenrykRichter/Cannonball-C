@@ -10,8 +10,8 @@
     Copyright Chris White.
     See license.txt for more details.
 ***************************************************************************/
-
-#pragma once
+#ifndef _SRC_MAIN_ENGINE_OINITENGINE_H
+#define _SRC_MAIN_ENGINE_OINITENGINE_H
 
 #include "outrun.h"
 
@@ -113,4 +113,4 @@ void OInitEngine_set_granular_position();
 void OInitEngine_set_fine_position();
 
 void OInitEngine_init_bonus(int16_t); // moved here for debugging purposes
-
+#endif

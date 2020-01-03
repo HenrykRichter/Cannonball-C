@@ -11,8 +11,8 @@
     Copyright Chris White.
     See license.txt for more details.
 ***************************************************************************/
-
-#pragma once
+#ifndef _INC_SRC_MAIN_ENGINE_OADDRESSES_H
+#define _INC_SRC_MAIN_ENGINE_OADDRESSES_H
 
 // ----------------------------------------------------------------------------
 // Text Structures
@@ -615,3 +615,5 @@
 // 0     - 0xFF : X Position
 // 0x100 - 0x1FF: Y Position
 #define DATA_MOVEMENT 0x30800
+
+#endif

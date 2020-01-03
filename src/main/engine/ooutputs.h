@@ -13,8 +13,8 @@
     Copyright Chris White.
     See license.txt for more details.
 ***************************************************************************/
-
-#pragma once
+#ifndef _INC_SRC_MAIN_ENGINE_OOUTPUTS_H
+#define _INC_SRC_MAIN_ENGINE_OOUTPUTS_H
 
 #include "stdint.h"
 
@@ -63,3 +63,4 @@ void OOutputs_tick(int MODE, int16_t input_motor, int16_t cabinet_type);
 void OOutputs_set_digital(uint8_t);
 void OOutputs_clear_digital(uint8_t);
 void OOutputs_coin_chute_out(CoinChute* chute, Boolean insert);
+#endif

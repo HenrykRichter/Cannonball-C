@@ -18,7 +18,9 @@
 #else
 #include "sdl/rendersw.h"
 #endif
-
+#ifndef NULL
+#define NULL (0)
+#endif
     
 uint16_t *Video_pixels = NULL;
 Boolean Video_enabled;
@@ -351,11 +353,13 @@ uint32_t Video_read_pal32(uint32_t* palAddr)
 // Convert internal System 16 RRRR GGGG BBBB format palette to Video_renderer output format
 void Video_refresh_palette(uint32_t palAddr)
 {
+    uint32_t a,r,g,b;
+
     palAddr &= ~1;
-    uint32_t a = (palette[palAddr] << 8) | palette[palAddr + 1];
-    uint32_t r = (a & 0x000f) << 1; // r rrr0
-    uint32_t g = (a & 0x00f0) >> 3; // g ggg0
-    uint32_t b = (a & 0x0f00) >> 7; // b bbb0
+    a = (palette[palAddr] << 8) | palette[palAddr + 1];
+    r = (a & 0x000f) << 1; // r rrr0
+    g = (a & 0x00f0) >> 3; // g ggg0
+    b = (a & 0x0f00) >> 7; // b bbb0
      
 
     Render_convert_palette(palAddr, r, g, b);

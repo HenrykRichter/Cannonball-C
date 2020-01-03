@@ -2082,10 +2082,11 @@ void YM_advance()
 */
 void YM_stream_update()
 {
-    YM_clear_buffer();
     uint32_t i;
     int32_t outl,outr;
     uint32_t length = YM_frame_size;
+
+	YM_clear_buffer();
 
 #ifdef USE_MAME_TIMERS
         /* ASG 980324 - handled by real timers now */

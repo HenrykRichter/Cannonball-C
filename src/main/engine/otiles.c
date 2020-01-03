@@ -255,6 +255,7 @@ void OTiles_update_tilemaps(int8_t p)
 void OTiles_clear_tile_info()
 {
     uint8_t i;
+    uint32_t dst_addr;
     
     // 1. Clear portion of RAM containing tilemap info (60F00 - 60F1F)
     fg_h_scroll = 
@@ -272,7 +273,7 @@ void OTiles_clear_tile_info()
     bg_addr = 0;    // +4 words
 
     // 2. Clear portion of TEXT RAM containing tilemap info (110E80 - 110FFF)
-    uint32_t dst_addr = HW_FG_PSEL;
+    dst_addr = HW_FG_PSEL;
     for (i = 0; i <= 0x5F; i++)
         Video_write_text32IncP(&dst_addr, 0);
 
@@ -301,13 +302,14 @@ void OTiles_init_tilemap(int16_t stage_id)
 {
     uint8_t offset = (RomLoader_read8(Roms_rom0p, Outrun_adr.tiles_def_lookup + stage_id) << 2) * 3;
     uint32_t addr = Outrun_adr.tiles_table + offset;
+    int16_t v_off;
 
     fg_v_tiles    = RomLoader_read8IncP(Roms_rom0p, &addr);   // Write Default FG Tilemap Height
     bg_v_tiles    = RomLoader_read8IncP(Roms_rom0p, &addr);   // Write Default BG Tilemap Height
     fg_addr       = RomLoader_read32IncP(Roms_rom0p, &addr);  // Write Default FG Tilemap Address
     bg_addr       = RomLoader_read32IncP(Roms_rom0p, &addr);  // Write Default BG Tilemap Address
     tilemap_v_off = RomLoader_read16IncP(Roms_rom0p, &addr);
-    int16_t v_off = 0x68 - tilemap_v_off;
+    v_off = 0x68 - tilemap_v_off;
     ORoad_horizon_y_bak = ORoad_horizon_y2;
 
     fg_v_scroll   = v_off;
@@ -441,6 +443,7 @@ void OTiles_copy_bg_tiles(uint32_t dst_addr)
                 {
                     uint16_t value = RomLoader_read16IncP(&Roms_rom0, &src_addr); // tile index to copy
                     uint16_t count = RomLoader_read16IncP(&Roms_rom0, &src_addr); // number of times to copy value
+		    uint8_t  i;
                 
                     // copy_compressed:
                     for (i = 0; i <= count; i++)
@@ -592,15 +595,17 @@ void OTiles_clear_old_name_table()
 
 void OTiles_h_scroll_tilemaps()
 {
+    int32_t tilemap_h_target,tilemap_x;
+
     // Road Splitting
     if (OInitEngine_end_stage_props & BIT_0)
     {
         // Road position is used as an offset into the table. (Note it's reset at beginning of road split)
         h_scroll_lookup = RomLoader_read16(&Roms_rom0, H_SCROLL_TABLE + ((ORoad_road_pos >> 16) << 1));
         
-        int32_t tilemap_h_target = h_scroll_lookup << 5;
+        tilemap_h_target = h_scroll_lookup << 5;
         tilemap_h_target <<= 16;
-        int32_t tilemap_x = tilemap_h_target - (tilemap_h_scr << 5);
+        tilemap_x = tilemap_h_target - (tilemap_h_scr << 5);
         if (tilemap_x != 0) 
         {
             tilemap_x >>= 8;
@@ -622,9 +627,9 @@ void OTiles_h_scroll_tilemaps()
         if (OInitEngine_rd_split_state != INITENGINE_SPLIT_NONE && 
             OInitEngine_rd_split_state <= 4) return;
 
-        int32_t tilemap_h_target = (ORoad_tilemap_h_target << 5) & 0xFFFF;
+        tilemap_h_target = (ORoad_tilemap_h_target << 5) & 0xFFFF;
         tilemap_h_target <<= 16;
-        int32_t tilemap_x = tilemap_h_target - (tilemap_h_scr << 5);
+        tilemap_x = tilemap_h_target - (tilemap_h_scr << 5);
         if (tilemap_x != 0) 
         {
             tilemap_x >>= 8;
@@ -651,8 +656,10 @@ void OTiles_h_scroll_tilemaps()
 // Source: 0xDBB8
 void OTiles_v_scroll_tilemaps()
 {
+    int32_t d0;
+
     ORoad_horizon_y_bak = (ORoad_horizon_y_bak + ORoad_horizon_y2) >> 1;
-    int32_t d0 = (0x100 - ORoad_horizon_y_bak - tilemap_v_off - vswap_off);
+    d0 = (0x100 - ORoad_horizon_y_bak - tilemap_v_off - vswap_off);
     tilemap_v_scr ^= d0;
 
     if (d0 < 0)
@@ -678,16 +685,19 @@ void OTiles_v_scroll_tilemaps()
 void OTiles_update_fg_page()
 {
     int16_t h = tilemap_h_scr >> 16;
+    int32_t rol7;
+    uint8_t cur_stage;
+
     if (OInitEngine_rd_split_state == INITENGINE_SPLIT_NONE)
         h = -h;
 
     fg_h_scroll = h;
     
     // Choose Page 0 - 3
-    int32_t rol7 = h << 7;
+    rol7 = h << 7;
     h = ((rol7 >> 16) & 3) << 1;
     
-    uint8_t cur_stage = page_split ? page + 1 : page;
+    cur_stage = page_split ? page + 1 : page;
 
     cur_stage &= 1;
     cur_stage *= 8;
@@ -698,6 +708,8 @@ void OTiles_update_fg_page()
 void OTiles_update_bg_page()
 {
     int16_t h = tilemap_h_scr >> 16;
+    int32_t rol7;
+    uint8_t cur_stage;
 
     if (OInitEngine_rd_split_state == INITENGINE_SPLIT_NONE)
         h = -h;
@@ -708,10 +720,10 @@ void OTiles_update_bg_page()
     bg_h_scroll = h;
 
     // Choose Page 0 - 3
-    int32_t rol7 = h << 7;
+    rol7 = h << 7;
     h = ((rol7 >> 16) & 3) << 1;
 
-    uint8_t cur_stage = page_split ? page + 1 : page;
+    cur_stage = page_split ? page + 1 : page;
 
     cur_stage &= 1;
     cur_stage = ((cur_stage * 2) + cur_stage) << 1;

@@ -7,10 +7,14 @@
     Copyright Chris White.
     See license.txt for more details.
 ***************************************************************************/
+#ifndef _INC_SRC_MAIN_ENGINE_OINPUTS_H
+#define _INC_SRC_MAIN_ENGINE_OINPUTS_H
 
-#pragma once
-
+#ifdef NOSDL
+#include "amiga/amigainput.h"
+#else
 #include "sdl/input.h"
+#endif
 #include "outrun.h"
 
 const static uint8_t INPUTS_BRAKE_THRESHOLD1 = 0x80;
@@ -44,3 +48,4 @@ Boolean OInputs_is_analog_l();
 Boolean OInputs_is_analog_r();
 Boolean OInputs_is_analog_select();
 
+#endif

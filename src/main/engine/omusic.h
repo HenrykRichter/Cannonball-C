@@ -6,8 +6,8 @@
     Copyright Chris White.
     See license.txt for more details.
 ***************************************************************************/
-
-#pragma once
+#ifndef _INC_SRC_MAIN_ENGINE_OMUSIC_H
+#define _INC_SRC_MAIN_ENGINE_OMUSIC_H
 
 #include "outrun.h"
 
@@ -22,6 +22,6 @@ void OMusic_tick();
 void OMusic_blit();
 void OMusic_check_start();
 
-
+#endif
 
 

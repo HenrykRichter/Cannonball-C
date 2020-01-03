@@ -5,8 +5,8 @@
     Copyright Chris White.
     See license.txt for more details.
 ***************************************************************************/
-
-#pragma once
+#ifndef _INC_SRC_MAIN_FRONTEND_TTRIAL_H
+#define _INC_SRC_MAIN_FRONTEND_TTRIAL_H
 
 #include "stdint.h"
 
@@ -38,3 +38,4 @@ void TTrial_init();
 int  TTrial_tick();
 void TTrial_update_best_time();
 
+#endif

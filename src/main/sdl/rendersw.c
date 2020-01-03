@@ -13,8 +13,9 @@
 
 #include "../globals.h"
 #include "../setup.h"
-#include <SDL.h>
- 
+
+#include <SDL/SDL.h>
+#include <stdio.h>
 
 uint32_t my_min(uint32_t a, uint32_t b) { return a < b ? a : b; }
 
@@ -23,7 +24,7 @@ SDL_Surface *Render_surface;
 // Palette Lookup
 uint32_t Render_rgb[S16_PALETTE_ENTRIES * 3];    // Extended to hold shadow/hilight colours
 
-uint32_t *Render_screen_pixels;
+uint16_t *Render_screen_pixels;
 
 // Original Screen Width & Height
 uint16_t Render_orig_width, Render_orig_height;
@@ -65,10 +66,10 @@ uint32_t Render_Rmask, Render_Gmask, Render_Bmask;
 Boolean Render_sdl_screen_size();
 
 // Scanline pixels
-uint32_t* Render_scan_pixels = NULL;
+uint16_t* Render_scan_pixels = NULL;
 
 // Pixel Conversion
-uint32_t* Render_pix = NULL;
+uint16_t* Render_pix = NULL;
 
 // Scale the screen
 int Render_scale_factor;
@@ -81,11 +82,18 @@ void Render_scanlines_32bpp(uint32_t* src, const int width, const int height,
 
 void Render_scalex( uint32_t* src, const int srcwid, const int srchgt, uint32_t* dest, const int scale);
 
+void Render_Quit()
+{
+
+}
+
 Boolean Render_init(int src_width, int src_height, 
                     int scale,
                     int video_mode,
                     int scanlines)
 {
+    int flags = SDL_FLAGS;
+
     Render_src_width  = src_width;
     Render_src_height = src_height;
     Render_video_mode = video_mode;
@@ -95,7 +103,6 @@ Boolean Render_init(int src_width, int src_height,
     if (!Render_sdl_screen_size())
         return FALSE;
 
-    int flags = SDL_FLAGS;
 
     // --------------------------------------------------------------------------------------------
     // Full Screen Mode
@@ -135,7 +142,7 @@ Boolean Render_init(int src_width, int src_height,
             }
         }
         flags |= SDL_FULLSCREEN; // Set SDL flag
-        //SDL_ShowCursor(FALSE);   // Don't show mouse cursor in full-screen mode
+        SDL_ShowCursor(FALSE);   // Don't show mouse cursor in full-screen mode
     }
     // --------------------------------------------------------------------------------------------
     // Windowed Mode
@@ -153,7 +160,7 @@ Boolean Render_init(int src_width, int src_height,
         Render_dst_width  = Render_scn_width;
         Render_dst_height = Render_scn_height;
         
-       // SDL_ShowCursor(TRUE);
+        SDL_ShowCursor(TRUE);
     }
 
     // If we're not stretching the screen, centre the image
@@ -175,17 +182,17 @@ Boolean Render_init(int src_width, int src_height,
     }
 
     //int bpp = info->vfmt->BitsPerPixel;
+   {
     const int bpp = 16;
-    //const int available = SDL_VideoModeOK(Render_scn_width, Render_scn_height, bpp, flags);
+    const int available = SDL_VideoModeOK(Render_scn_width, Render_scn_height, bpp, flags);
 
     // Frees (Deletes) existing surface
-    //if (Render_surface)
-    //    SDL_FreeSurface(Render_surface);
+    if (Render_surface)
+        SDL_FreeSurface(Render_surface);
 
     // Set the video mode
-    //Render_surface = SDL_SetVideoMode(Render_scn_width, Render_scn_height, bpp, flags);
+    Render_surface = SDL_SetVideoMode(Render_scn_width, Render_scn_height, bpp, flags);
 
-/*
     if (!Render_surface || !available)
     {
         fprintf(stderr, "Video mode set failed: %d.\n", SDL_GetError());
@@ -215,8 +222,9 @@ Boolean Render_init(int src_width, int src_height,
     if (Render_pix)
         free(Render_pix);
     Render_pix = (uint16_t*)malloc(Render_src_width * Render_src_height * sizeof(uint16_t));
-*/
+
     return TRUE;
+   }
 }
 
 void Render_disable()
@@ -232,20 +240,27 @@ Boolean Render_start_frame()
 Boolean Render_finalize_frame()
 {
    
-    //SDL_Flip(Render_surface);
+    SDL_Flip(Render_surface);
 
     return TRUE;
 }
 
 void Render_draw_frame(uint16_t* pixels)
 {
-    int i = 0;
-    uint16_t* spix = Render_screen_pixels;
+    int i,j,add;
+    uint16_t* spix;
+    //= Render_screen_pixels;
 
-  
-// Lookup real RGB value from rgb array for backbuffer
-    for (i = 0; i < (0x11800); i+=16)
+   SDL_LockSurface (Render_surface);
+   spix = (uint16_t*)Render_surface->pixels;
+   add  = (Render_surface->pitch>>1)-320; /* in uint16 units */
+
+    // Lookup real RGB value from rgb array for backbuffer
+    // 320*224 = 71680 = 0x1180
+    for (j = 0; j < 224 ; j++ )
     {
+     for (i = 0; i < 320; i+=16)
+     {
         *(spix++) = Render_rgb[*(pixels++) & ((S16_PALETTE_ENTRIES * 3) - 1)];
         *(spix++) = Render_rgb[*(pixels++) & ((S16_PALETTE_ENTRIES * 3) - 1)];
         *(spix++) = Render_rgb[*(pixels++) & ((S16_PALETTE_ENTRIES * 3) - 1)];
@@ -262,8 +277,11 @@ void Render_draw_frame(uint16_t* pixels)
         *(spix++) = Render_rgb[*(pixels++) & ((S16_PALETTE_ENTRIES * 3) - 1)];
         *(spix++) = Render_rgb[*(pixels++) & ((S16_PALETTE_ENTRIES * 3) - 1)];
         *(spix++) = Render_rgb[*(pixels++) & ((S16_PALETTE_ENTRIES * 3) - 1)];
-
-    }        
+     }
+     spix+=add;
+    }
+   SDL_UnlockSurface (Render_surface);
+ 
 }
 
  
@@ -275,13 +293,13 @@ Boolean Render_sdl_screen_size()
 {
     if (Render_orig_width == 0 || Render_orig_height == 0)
     {
-        //const SDL_VideoInfo* info = SDL_GetVideoInfo();
+        const SDL_VideoInfo* info = SDL_GetVideoInfo();
 
-        //if (!info)
-        //{
+        if (!info)
+        {
             //std::cerr << "Video query failed: " << SDL_GetError() << std::endl;
-        //    return FALSE;
-        //}
+            return FALSE;
+        }
         
         Render_orig_width  = 320; 
         Render_orig_height = 224;
@@ -299,7 +317,9 @@ Boolean Render_sdl_screen_size()
 void Render_convert_palette(uint32_t adr, uint32_t r, uint32_t g, uint32_t b)
 {
     adr >>= 1;
- 
+
+    g<<=1; /* quick fix for 16 bit screens */
+
     Render_rgb[adr] = CURRENT_RGB();
       
     // Create shadow / highlight colours at end of RGB array

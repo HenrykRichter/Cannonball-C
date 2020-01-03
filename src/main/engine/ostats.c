@@ -214,11 +214,13 @@ void OStats_init_next_level()
     }
     else if (Outrun_game_state == GS_INGAME && OInitEngine_checkpoint_marker)
     {
+        uint16_t time_lookup;
+
         OInitEngine_checkpoint_marker = 0;
         OStats_extend_play_timer             = 0x80;
         
         // Calculate Time To Add
-        uint16_t time_lookup = (Config_engine.dip_time * 40) + ORoad_stage_lookup_off;
+        time_lookup = (Config_engine.dip_time * 40) + ORoad_stage_lookup_off;
         if (!Outrun_freeze_timer)
         {
             if (Outrun_cannonball_mode == OUTRUN_MODE_ORIGINAL)

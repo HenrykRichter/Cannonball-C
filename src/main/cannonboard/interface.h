@@ -4,8 +4,8 @@
     Copyright Chris White.
     See license.txt for more details.
 ***************************************************************************/
-
-#pragma once
+#ifndef _INC_SRC_MAIN_CANNONBOARD_INTERFACE_H
+#define _INC_SRC_MAIN_CANNONBOARD_INTERFACE_H
 
 #include "globals.h"
 #include <string.h>
@@ -69,4 +69,5 @@ Boolean Interface_started();
 Packet* Interface_get_packet();
 
 
+#endif
 

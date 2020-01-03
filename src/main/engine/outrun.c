@@ -98,10 +98,14 @@ void Outrun_init()
 void Outrun_boot()
 {
     Outrun_game_state = Config_engine.layout_debug ? GS_INIT_GAME : GS_INIT;
+
+
     // Initialize default hi-score entries
     OHiScore_init_def_scores();
+
     // Load saved hi-score entries
     Config_load_scores(getScoresFilename());
+
     OStats_init(Outrun_cannonball_mode == OUTRUN_MODE_TTRIAL);
     Outrun_init_jump_table();
     OInitEngine_init(Outrun_cannonball_mode == OUTRUN_MODE_TTRIAL ? Outrun_ttrial.level : 0);
@@ -179,12 +183,13 @@ void Outrun_vint()
 
     if (Config_fps < 120 || (cannonball_frame & 1))
     {
+        uint8_t coin;
         OPalette_cycle_sky_palette();
         OPalette_fade_palette();
         // ... 
         OStats_do_timers();
         if (Outrun_cannonball_mode != OUTRUN_MODE_TTRIAL) OHud_draw_timer1(OStats_time_counter);
-        uint8_t coin = OInputs_do_credits();
+        coin = OInputs_do_credits();
         OOutputs_coin_chute_out(&OOutputs_chute1, coin == 1);
         OOutputs_coin_chute_out(&OOutputs_chute2, coin == 2);
         OInitEngine_set_granular_position();
@@ -776,12 +781,14 @@ void Outrun_init_motor_calibration()
 
 
     // Write Palette To RAM
-    uint32_t dst = 0x120000;
-    const static uint32_t PAL_SERVICE[] = {0xFF, 0xFF00FF, 0xFF00FF, 0xFF0000};
-    Video_write_pal32IncP(&dst, PAL_SERVICE[0]);
-    Video_write_pal32IncP(&dst, PAL_SERVICE[1]);
-    Video_write_pal32IncP(&dst, PAL_SERVICE[2]);
-    Video_write_pal32IncP(&dst, PAL_SERVICE[3]);
+    {
+     uint32_t dst = 0x120000;
+     const static uint32_t PAL_SERVICE[] = {0xFF, 0xFF00FF, 0xFF00FF, 0xFF0000};
+     Video_write_pal32IncP(&dst, PAL_SERVICE[0]);
+     Video_write_pal32IncP(&dst, PAL_SERVICE[1]);
+     Video_write_pal32IncP(&dst, PAL_SERVICE[2]);
+     Video_write_pal32IncP(&dst, PAL_SERVICE[3]);
+    }
 }
 
 // -------------------------------------------------------------------------------
@@ -819,9 +826,11 @@ void Outrun_tick_attract()
             attract_counter = 0;
             if (++attract_view > 2)
                 attract_view = 0;
-            Boolean snap = VIEWS[attract_view] == ROAD_VIEW_INCAR;
-            ORoad_set_view_mode(VIEWS[attract_view], snap);
-        }
+	    {
+             Boolean snap = VIEWS[attract_view] == ROAD_VIEW_INCAR;
+             ORoad_set_view_mode(VIEWS[attract_view], snap);
+	    }
+	}
     }
 
     if (OStats_credits)

@@ -31,13 +31,13 @@ void outils_reset_random_seed()
 uint32_t outils_random()
 {
 	// New seed value
-	uint32_t seed = rnd_seed;
+	uint32_t rnd,seed = rnd_seed;
 
 	if (seed == 0)
         seed = Config_engine.randomgen ? 0x2A6D365A : rand();
 
 	// Random Value To Return
-	uint32_t rnd = seed;
+	rnd = seed;
 	
 	seed <<= 2;
 	seed += rnd;
@@ -68,11 +68,13 @@ int32_t outils_next(const int32_t n, const int32_t i)
 
 int32_t outils_isqrt(int32_t number) 
 {
+    int n,n1;
+
     if (number == 0)
         return 0;
 
-    int n  = 1;
-    int n1 = outils_next(n, number);
+    n  = 1;
+    n1 = outils_next(n, number);
 
     while(abs(n1 - n) > 1) 
     {
@@ -168,6 +170,10 @@ void outils_convert_counter_to_time(uint16_t counter, uint8_t* converted)
 
     int32_t src_time = counter; // laptime copy [d0] 
     int16_t minutes = -1;     // Store number of minutes
+    uint8_t ms_lookup;
+    uint8_t seconds;
+    uint8_t s1,s2;
+    int16_t d3;
 
     // Calculate Minutes
     do
@@ -180,19 +186,19 @@ void outils_convert_counter_to_time(uint16_t counter, uint8_t* converted)
     src_time += MINUTE;
 
     // Store Millisecond Lookup
-    uint8_t ms_lookup = src_time & 0x3F; 
+    ms_lookup = src_time & 0x3F; 
     
     // Calculate Seconds
-    uint8_t seconds = src_time >> 6;   // Store Seconds
+    seconds = src_time >> 6;   // Store Seconds
 
-    uint8_t s1 = seconds & 0xF; // First digit [d1]
-    uint8_t s2 = seconds >> 4;  // Second digit [d2]
+    s1 = seconds & 0xF; // First digit [d1]
+    s2 = seconds >> 4;  // Second digit [d2]
 
     if (s1 > 9)
         seconds += 6;
 
     s2 = outils_bcd_add(s2, s2);
-    int16_t d3 = s2;
+    d3 = s2;
     s2 = outils_bcd_add(s2, s2);
     s2 = outils_bcd_add(s2, d3);
     seconds = outils_bcd_add(s2, seconds);

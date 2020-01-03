@@ -160,11 +160,12 @@ void OHiScore_init_def_scores()
 
     for (i = 0; i < HISCORE_NUM_SCORES; i++)
     {
+        uint32_t initials;
         // Read default score
         OHiScore_scores[i].score = RomLoader_read32IncP(&Roms_rom0, &adr);
 
         // Read initials
-        uint32_t initials = RomLoader_read32IncP(&Roms_rom0, &adr);
+        initials = RomLoader_read32IncP(&Roms_rom0, &adr);
         OHiScore_scores[i].initial1 = (initials >> 24) & 0xFF;
         OHiScore_scores[i].initial2 = (initials >> 16) & 0xFF;
         OHiScore_scores[i].initial3 = (initials >> 8) & 0xFF;
@@ -199,13 +200,13 @@ void OHiScore_tick()
                 else
                 #endif
                 OSoundInt_queue_sound(SOUND_MUSIC_LASTWAVE);
-                
-                 if (Config_sound.amiga_midi)
+#ifndef NOCAMD
+                if (Config_sound.amiga_midi)
                 {
                     I_CAMD_StopSong();
                     I_CAMD_PlaySong("data/lastwave.mid");
                 }
-                
+#endif                
                 OHiScore_insert_score();               
             }
             // Not a High Score
@@ -331,12 +332,12 @@ void OHiScore_check_name_entry()
     {
         // Get text ram address of score to blit
         uint32_t score_adr = OHiScore_get_score_adr();
+	const uint16_t BIG_RED_FONT = 0x8080;
         // Blit Alphabet. Highlight selected letter red.
         OHiScore_blit_alphabet();
         // Flash current initial that is being entered
         OHiScore_flash_entry(score_adr);   
         // Draw big red countdown timer
-        const uint16_t BIG_RED_FONT = 0x8080;
         OHud_draw_timer2(OStats_time_counter, 0x1101EC, BIG_RED_FONT);
         // Input from controls
         OHiScore_do_input(score_adr);
@@ -366,6 +367,7 @@ void OHiScore_blit_alphabet()
     // Print Text: "ABCDEFGHIJK..."
     OHud_blit_text2(TEXT2_ALPHABET); 
 
+  {
     // Address in text ram for characters
     uint32_t adr = 0x110BF0;
 
@@ -375,12 +377,14 @@ void OHiScore_blit_alphabet()
     Video_write_text16(adr + 0x7E,  0x8D05);
     Video_write_text16IncP(&adr,    0x8D02); // ED
     Video_write_text16(adr + 0x7E,  0x8D03);
-
+   {
     // Colour selected tile red
     const uint16_t RED = 0x80;
     adr = 0x110BBC + (letter_selected << 1);
     Video_write_text8(adr,        (Video_read_text8(adr) & 1) | RED);
     Video_write_text8(adr + 0x80, (Video_read_text8(adr + 0x80) & 1) | RED);
+   }
+  }
 }
 
 // Flash current initial that is being entered
@@ -498,6 +502,7 @@ int8_t OHiScore_read_controls()
         acc_curr = -1;
     }
 
+   {
     // Check Steering Wheel
     int8_t movement = 1; // default to right
     int16_t steering = (OInputs_input_steering & 0xFF) - 0x80;
@@ -520,6 +525,7 @@ int8_t OHiScore_read_controls()
         movement = 0; // no movement
    
     return movement;
+   }
 }
 
 // Display Best Outrunners in attract mode and name entry screen
@@ -603,7 +609,7 @@ void OHiScore_tick_minicars()
             minicar->pos += minicar->speed;
 
             OHiScore_setup_minicars_pal(minicar);
-
+          {
             // Masked off the lower bit
             int16_t pos = (minicar->pos >> 8) & 0xFFFE;
 
@@ -635,11 +641,14 @@ void OHiScore_tick_minicars()
             // Reveal info from tile ram by copying to text ram
 
             // Bottom Line
+	   {
             uint16_t tile_bits = Video_read_tile8(textram_adr - 0x2000 + 1) | minicar->tile_props;
             Video_write_text16(textram_adr, tile_bits);
             // Top Line
             tile_bits = Video_read_tile8(textram_adr - 0x2000 - 0x7F) | minicar->tile_props;
             Video_write_text16(textram_adr - 0x80, tile_bits);
+	   }
+	  }
         }
 
         dst += 0x100; // Advance to next row in text ram
@@ -868,6 +877,7 @@ void OHiScore_convert_lap_time(uint16_t time)
     src_time += MINUTE;
     minutes = outils_convert16_dechex(minutes);
 
+   {
     // Store Millisecond Lookup
     uint16_t ms_lookup = src_time & 0x3F; 
     
@@ -881,6 +891,7 @@ void OHiScore_convert_lap_time(uint16_t time)
         seconds += 6;
 
     s2 = outils_bcd_add(s2, s2);
+   {
     int16_t d3 = s2;
     s2 = outils_bcd_add(s2, s2);
     s2 = outils_bcd_add(s2, d3);
@@ -897,4 +908,5 @@ void OHiScore_convert_lap_time(uint16_t time)
     // Output Minutes
     laptime[1] = (minutes & 0xF) | TILE_PROPS;
     laptime[0] = ((minutes & 0xF0) >> 4) | TILE_PROPS;
+   }}
 }

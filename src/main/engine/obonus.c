@@ -76,12 +76,12 @@ void OBonus_do_bonus_text()
 void OBonus_init_bonus_text()
 {
     int i = 0;
-    OBonus_bonus_state = BONUS_TEXT_SECONDS;
-    
     int16_t time_counter_bak = OStats_time_counter << 8;
+    uint16_t total_time = 0;
+
+    OBonus_bonus_state = BONUS_TEXT_SECONDS;
     OStats_time_counter = 0x30;
 
-    uint16_t total_time = 0;
 
     if (Outrun_cannonball_mode == OUTRUN_MODE_ORIGINAL)
     {
@@ -101,6 +101,7 @@ void OBonus_init_bonus_text()
     }
     // So 60 seconds remaining on the clock and 3 from lap_seconds would be 0x0603
 
+   {
     // Extract individual 3 digits
     uint16_t digit_mid = (time_counter_bak >> 8  & 0x0F) * 10;
     uint16_t digit_top = (time_counter_bak >> 12 & 0x0F) * 100;
@@ -116,15 +117,18 @@ void OBonus_init_bonus_text()
     OHud_blit_text1(TEXT1_BONUS_X);      // Print 'X' symbol after SEC
     OHud_blit_text1(TEXT1_BONUS_PTS);    // Print "PTS"
 
-    // Blit big 100K number
-    uint32_t src_addr = TEXT1_BONUS_100K;
-    uint32_t dst_addr = 0x11065A;
-    int8_t count = RomLoader_read8IncP(&Roms_rom0, &src_addr);
+    {
+     // Blit big 100K number
+     uint32_t src_addr = TEXT1_BONUS_100K;
+     uint32_t dst_addr = 0x11065A;
+     int8_t count = RomLoader_read8IncP(&Roms_rom0, &src_addr);
 
-    for (i = 0; i <= count; i++)
+     for (i = 0; i <= count; i++)
         OHud_blit_large_digit(&dst_addr, (RomLoader_read8IncP(&Roms_rom0, &src_addr) - 0x30) << 1);
 
-    OBonus_blit_bonus_secs();
+      OBonus_blit_bonus_secs();
+    }
+   }
 }
 
 // Decrement bonus seconds. Blit seconds remaining.
@@ -170,6 +174,7 @@ void OBonus_blit_bonus_secs()
 
     uint32_t d2 = (bonus_secs - d4) / 10;
     uint32_t d3 = bonus_secs - d4;
+    uint32_t text_addr = 0x110644;
 
     d4 = d2;
     d2 <<= 4;
@@ -182,7 +187,6 @@ void OBonus_blit_bonus_secs()
     d2 = (d1 & 0xF0)  >> 3;
     d1 = (d1 & 0xF00) >> 7;
 
-    uint32_t text_addr = 0x110644;
 
     // Blit Digit 1
     if (d1)

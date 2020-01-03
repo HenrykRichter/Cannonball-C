@@ -207,9 +207,11 @@ void OInitEngine_init_road_seg_master()
 
 void OInitEngine_update_road()
 {
-    OInitEngine_check_road_split(); // Check/Process road split if necessary
     uint32_t addr = 0;
-    uint16_t d0 = TrackLoader_read_width_height(&addr);
+    uint16_t d0;
+
+    OInitEngine_check_road_split(); // Check/Process road split if necessary
+    d0 = TrackLoader_read_width_height(&addr);
     // Update next road section
     if (d0 <= ORoad_road_pos >> 16)
     {
@@ -278,7 +280,7 @@ void OInitEngine_update_road()
     // ------------------------------------------------------------------------------------------------
 
     // ROM:0000B91C set_road_type: 
-
+   {
     int16_t segment_pos = TrackLoader_read_curve(0);
 
     if (segment_pos != -1)
@@ -300,6 +302,7 @@ void OInitEngine_update_road()
             OInitEngine_road_curve_next = 0;
         }
     }
+   }
 }
 
 // Carries on from the above in the original code
@@ -502,6 +505,7 @@ void OInitEngine_check_stage()
     {
         // Store laptime and reset
         uint8_t* laptimes = Outrun_ttrial.laptimes[Outrun_ttrial.current_lap];
+	int16_t counter;
 
         laptimes[0] = OStats_stage_times[0][0];
         laptimes[1] = OStats_stage_times[0][1];
@@ -511,7 +515,7 @@ void OInitEngine_check_stage()
         OStats_stage_times[0][2] = 0;
 
         // Check for new best laptime
-        int16_t counter = OStats_stage_counters[Outrun_ttrial.current_lap];
+        counter = OStats_stage_counters[Outrun_ttrial.current_lap];
         if (counter < Outrun_ttrial.best_lap_counter)
         {
             Outrun_ttrial.best_lap_counter = counter;
@@ -662,10 +666,10 @@ void OInitEngine_init_split1()
 // ------------------------------------------------------------------------------------------------
 void OInitEngine_init_split2()
 {
-    OInitEngine_rd_split_state = INITENGINE_SPLIT_CHOICE2;
-
     // Manual adjustments to the road width, based on the current position
     int16_t pos = (((ORoad_road_pos >> 16) - 0x3F) << 3) + road_width_orig;
+
+    OInitEngine_rd_split_state = INITENGINE_SPLIT_CHOICE2;
     ORoad_road_width = (pos << 16) | (ORoad_road_width & 0xFFFF);
     if (pos > 0xFF)
     {
@@ -679,9 +683,9 @@ void OInitEngine_init_split2()
 // ------------------------------------------------------------------------------------------------
 void OInitEngine_init_split3()
 {
+    int16_t pos = (((ORoad_road_pos >> 16) - 0x3F) << 3) + road_width_orig;
     OInitEngine_rd_split_state = 4;
 
-    int16_t pos = (((ORoad_road_pos >> 16) - 0x3F) << 3) + road_width_orig;
     ORoad_road_width = (pos << 16) | (ORoad_road_width & 0xFFFF);
 
     if (route_updated & BIT_0 || pos <= 0x168)
@@ -697,8 +701,8 @@ void OInitEngine_init_split3()
     // Go Left
     if (OInitEngine_car_x_pos > 0)
     {
-        OInitEngine_route_selected = -1;
         uint8_t inc = 1 << (3 - OStats_cur_stage);
+        OInitEngine_route_selected = -1;
 
         // One of the following increment values
 
@@ -770,11 +774,12 @@ void OInitEngine_init_split6()
 
 void OInitEngine_init_split7()
 {
+    int16_t width2;
     OInitEngine_rd_split_state = 8;
 
     ORoad_road_ctrl = ROAD_BOTH_P0;
     OInitEngine_route_selected = ~OInitEngine_route_selected; // invert bits
-    int16_t width2 = (ORoad_road_width >> 16) << 1;
+    width2 = (ORoad_road_width >> 16) << 1;
     if (OInitEngine_route_selected == 0) 
         width2 = -width2;
     OInitEngine_car_x_pos += width2;
@@ -789,10 +794,11 @@ void OInitEngine_init_split7()
 // ------------------------------------------------------------------------------------------------
 void OInitEngine_init_split9()
 {
+    uint16_t d0;
     OInitEngine_rd_split_state = 10;
 
     // Calculate narrower road width to merge roads
-    uint16_t d0 = (road_width_merge - ((ORoad_road_pos >> 16) - road_width_orig)) << 3;
+    d0 = (road_width_merge - ((ORoad_road_pos >> 16) - road_width_orig)) << 3;
 
     if (d0 <= RD_WIDTH_MERGE)
     {
@@ -981,8 +987,9 @@ void OInitEngine_init_crash_bonus()
         // do_skid:
         if (OTraffic_collision_traffic == 1)
         {   
+	    uint8_t rnd;
             OTraffic_collision_traffic = 2;
-            uint8_t rnd = outils_random() & OTraffic_collision_mask;
+            rnd = outils_random() & OTraffic_collision_mask;
             if (rnd == OTraffic_collision_mask)
             {
                 // Try to launch crash code and perform a spin

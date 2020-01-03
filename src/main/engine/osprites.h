@@ -11,8 +11,8 @@
     Copyright Chris White.
     See license.txt for more details.
 ***************************************************************************/
-
-#pragma once
+#ifndef _INC_SRC_MAIN_ENGINE_OSPRITES_H
+#define _INC_SRC_MAIN_ENGINE_OSPRITES_H
 
 #include "oentry.h"
 #include "osprite.h"
@@ -131,4 +131,4 @@ void OSprites_set_sprite_xy(oentry*, osprite*, uint16_t, uint16_t);
 void OSprites_set_hrender(oentry*, osprite*, uint16_t, uint16_t);
 
 void OSprites_move_sprite(oentry*, uint8_t);
-
+#endif

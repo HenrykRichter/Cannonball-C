@@ -1,5 +1,5 @@
-#pragma once
-
+#ifndef _INC_SRC_MAIN_HWVIDEO_HWROAD_H
+#define _INC_SRC_MAIN_HWVIDEO_HWROAD_H
 #include "stdint.h"
 
 
@@ -15,4 +15,28 @@ void HWRoad_write_road_control(const uint8_t);
 
 extern void (*HWRoad_render_background)(uint16_t*);
 extern void (*HWRoad_render_foreground)(uint16_t*);
-  
+
+typedef struct
+{
+   uint8_t  *src0;
+   uint8_t  *src1;
+   int32_t  hpos0;
+   int32_t  hpos1;
+   uint16_t width;
+   uint16_t *dest;
+   uint16_t *colortable;
+} RoadRender;
+
+typedef struct
+{
+  uint16_t *pix;        /* output pixel data */
+  uint16_t *ram;	/* road RAM     */
+  uint16_t coloff;      /* color offset */
+  uint16_t xs;          /* width  */
+  uint16_t ys;          /* height */
+  uint8_t  ctl;         /* HWRoad_road_control */
+
+} FrameRoadBG;
+
+#endif
+

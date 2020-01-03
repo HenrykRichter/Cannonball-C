@@ -8,8 +8,8 @@
     Copyright Chris White.
     See license.txt for more details.
 ***************************************************************************/
-
-#pragma once
+#ifndef _ENGINE_AUDIO_OSoundInt_H
+#define _ENGINE_AUDIO_OSoundInt_H
 
 #include "hwaudio/segapcm.h"
 #include "hwaudio/ym2151.h"
@@ -40,4 +40,4 @@ void OSoundInt_queue_sound_service(uint8_t snd);
 void OSoundInt_queue_sound(uint8_t snd);
 void OSoundInt_queue_clear();
 
-
+#endif

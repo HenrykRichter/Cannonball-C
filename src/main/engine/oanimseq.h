@@ -12,8 +12,8 @@
     Copyright Chris White.
     See license.txt for more details.
 ***************************************************************************/
-
-#pragma once
+#ifndef _INC_SRC_MAIN_ENGINE_OANIMSEQ_H
+#define _INC_SRC_MAIN_ENGINE_OANIMSEQ_H
 
 #include "oanimsprite.h"
 
@@ -49,4 +49,6 @@ void OAnimSeq_ferrari_seq();
 void OAnimSeq_anim_seq_intro(oanimsprite*);
 void OAnimSeq_init_end_seq();
 void OAnimSeq_tick_end_seq();
+
+#endif
 

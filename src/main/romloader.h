@@ -7,8 +7,8 @@
     Copyright Chris White.
     See license.txt for more details.
 ***************************************************************************/
-
-#pragma once
+#ifndef _INC_SRC_MAIN_ROMLOADER_H
+#define _INC_SRC_MAIN_ROMLOADER_H
 
 enum 
 {
@@ -54,3 +54,4 @@ uint16_t RomLoader_read16IncP_addr16(RomLoader* romLoader, uint16_t* addr);
 uint8_t RomLoader_read8IncP_addr16(RomLoader* romLoader, uint16_t* addr);
 uint16_t RomLoader_read16_addr16(RomLoader* romLoader, uint16_t addr);
 uint8_t RomLoader_read8_addr16(RomLoader* romLoader, uint16_t addr);
+#endif

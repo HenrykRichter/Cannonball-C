@@ -11,8 +11,8 @@
     Copyright Chris White.
     See license.txt for more details.
 ***************************************************************************/
-
-#pragma once
+#ifndef _INC_SRC_MAIN_ENGINE_TRACKLOADER_H
+#define _INC_SRC_MAIN_ENGINE_TRACKLOADER_H
 
 #include "globals.h"
 
@@ -121,4 +121,6 @@ int32_t TrackLoader_read32(uint8_t* data, uint32_t addr);
 int16_t TrackLoader_read16(uint8_t* data, uint32_t addr);
 int8_t TrackLoader_read8(uint8_t* data, uint32_t addr);
 
+
+#endif
 

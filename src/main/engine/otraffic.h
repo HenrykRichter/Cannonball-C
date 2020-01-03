@@ -9,8 +9,8 @@
     Copyright Chris White.
     See license.txt for more details.
 ***************************************************************************/
-
-#pragma once
+#ifndef _INC_SRC_MAIN_ENGINE_OTRAFFIC_H
+#define _INC_SRC_MAIN_ENGINE_OTRAFFIC_H
 
 #include "outrun.h"
 
@@ -41,4 +41,5 @@ void OTraffic_set_max_traffic();
 void OTraffic_traffic_logic();
 void OTraffic_traffic_sound();
 
+#endif
 

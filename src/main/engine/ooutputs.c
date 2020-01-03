@@ -487,6 +487,7 @@ void OOutputs_calibrate_right(int16_t input_motor, uint8_t hw_motor_limit)
 void OOutputs_calibrate_centre(int16_t input_motor, uint8_t hw_motor_limit)
 {
     Boolean fail = FALSE;
+    int16_t d0,d1;
 
     if (hw_motor_limit & BIT_4) 
     {
@@ -506,8 +507,8 @@ void OOutputs_calibrate_centre(int16_t input_motor, uint8_t hw_motor_limit)
     // 0xEEB6:
     motor_centre_pos = (input_motor + motor_centre_pos) >> 1;
   
-    int16_t d0 = limit_right - motor_centre_pos;
-    int16_t d1 = motor_centre_pos  - limit_left;
+    d0 = limit_right - motor_centre_pos;
+    d1 = motor_centre_pos  - limit_left;
   
     // set both to left limit
     if (d0 > d1)
@@ -633,6 +634,9 @@ void OOutputs_do_motors(int MODE, int16_t input_motor)
 // Source: 0xE6DA
 void OOutputs_car_moving(const int MODE)
 {
+    uint16_t car_inc;
+    int16_t steering;
+
     // Motor is currently moving
     if (motor_movement)
     {
@@ -648,7 +652,7 @@ void OOutputs_car_moving(const int MODE)
         return;
     }
 
-    const uint16_t car_inc = OInitEngine_car_increment >> 16;
+    car_inc = OInitEngine_car_increment >> 16;
     if (car_inc <= 0x64)                    speed = 0;
     else if (car_inc <= 0xA0)               speed = 1 << 3;
     else if (car_inc <= 0xDC)               speed = 2 << 3;
@@ -659,7 +663,7 @@ void OOutputs_car_moving(const int MODE)
     else if (OInitEngine_road_curve <= 0x5A) curve = 1; // gentle curve
     else                                     curve = 0;
 
-    int16_t steering = OInputs_steering_adjust;
+    steering = OInputs_steering_adjust;
     steering += (movement_adjust1 + movement_adjust2 + movement_adjust3);
     steering >>= 2;
     movement_adjust3 = movement_adjust2;                   // Trickle down values
@@ -669,6 +673,8 @@ void OOutputs_car_moving(const int MODE)
     // Veer Left
     if (steering >= 0)
     {
+        uint8_t motor_value;
+
         steering = (steering >> 4) - 1;
         if (steering < 0)
         {
@@ -679,7 +685,7 @@ void OOutputs_car_moving(const int MODE)
         if (steering > 0)
             steering--;
 
-        uint8_t motor_value = MOTOR_VALUES[speed + curve];
+        motor_value = MOTOR_VALUES[speed + curve];
 
         if (MODE == OUTPUTS_MODE_FFEEDBACK)
         {
@@ -707,6 +713,8 @@ void OOutputs_car_moving(const int MODE)
     // Veer Right
     else
     {
+        uint8_t motor_value;
+
         steering = -steering;
         steering = (steering >> 4) - 1;
         if (steering < 0)
@@ -718,7 +726,7 @@ void OOutputs_car_moving(const int MODE)
         if (steering > 0)
             steering--;
 
-        uint8_t motor_value = MOTOR_VALUES[speed + curve];
+        motor_value = MOTOR_VALUES[speed + curve];
 
         if (MODE == OUTPUTS_MODE_FFEEDBACK)
         {
@@ -861,10 +869,10 @@ void OOutputs_done()
 // This is the equivalent to writing to register 0x140003
 void OOutputs_motor_output(uint8_t cmd)
 {
+    int8_t force = 0;
+
     if (cmd == MOTOR_OFF || cmd == MOTOR_CENTRE)
         return;
-
-    int8_t force = 0;
 
     if (cmd < MOTOR_CENTRE)      // left
         force = cmd - 1;
@@ -891,14 +899,16 @@ const static uint8_t VIBRATE_LOOKUP[] =
 // Source: 0xEAAA
 void OOutputs_do_vibrate_upright()
 {
+    uint16_t speed;
+    uint16_t index = 0;
+
     if (Outrun_game_state != GS_INGAME)
     {
         OOutputs_clear_digital(OUTPUTS_D_MOTOR);
         return;
     }
 
-    const uint16_t speed = OInitEngine_car_increment >> 16;
-    uint16_t index = 0;
+    speed = OInitEngine_car_increment >> 16;
 
     // Car Crashing: Diable Motor once speed below 10
     if (OCrash_crash_counter)
@@ -961,14 +971,16 @@ void OOutputs_do_vibrate_upright()
 
 void OOutputs_do_vibrate_mini()
 {
+    uint16_t speed;
+    uint16_t index = 0;
+
     if (Outrun_game_state != GS_INGAME)
     {
         OOutputs_clear_digital(OUTPUTS_D_MOTOR);
         return;
     }
 
-    const uint16_t speed = OInitEngine_car_increment >> 16;
-    uint16_t index = 0;
+    speed = OInitEngine_car_increment >> 16;
 
     // Car Crashing: Diable Motor once speed below 10
     if (OCrash_crash_counter)

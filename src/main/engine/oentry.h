@@ -23,8 +23,8 @@
     Copyright Chris White.
     See license.txt for more details.
 ***************************************************************************/
-
-#pragma once
+#ifndef _INC_SRC_MAIN_ENGINE_OENTRY_H
+#define _INC_SRC_MAIN_ENGINE_OENTRY_H
 
 #include "stdint.h"
 
@@ -155,3 +155,4 @@ typedef struct
 
 // Initalize to default values
 void oentry_init(oentry* entry, uint8_t i);
+#endif

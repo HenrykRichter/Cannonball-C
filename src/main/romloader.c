@@ -21,8 +21,9 @@
 int RomLoader_filesize(const char* filename)
 {
     FILE* file = fopen(filename, "rb");
+    uint32_t size; 
     fseek(file, 0L, SEEK_END);
-    uint32_t size = ftell(file);
+    size = ftell(file);
     fclose(file);
     return size; 
 }
@@ -49,6 +50,11 @@ int maxsize = 0;
 int RomLoader_load(RomLoader* romLoader, const char* filename, const int offset, const int length, const int expected_crc, const uint8_t interleave)
 {
     int i = 0;
+    FILE *file;
+    char*buffer;
+    int read;
+    crc computed_crc;
+
     if (maxsize < length)
     {
         maxsize = length;
@@ -69,7 +75,7 @@ int RomLoader_load(RomLoader* romLoader, const char* filename, const int offset,
 #endif
 
     // Open rom file
-    FILE* file = fopen(filename, "rb");
+    file = fopen(filename, "rb");
 
     if (!file)
     {
@@ -79,11 +85,10 @@ int RomLoader_load(RomLoader* romLoader, const char* filename, const int offset,
     }
 
     // Read file
-    char* buffer = (char*) malloc(length);
-    int read = fread(buffer, length, 1, file);
+    buffer = (char*) malloc(length);
+    read = fread(buffer, length, 1, file);
 
-    crc computed_crc = crcSlow(buffer, length);
-
+    computed_crc = crcSlow(buffer, length);
     if (expected_crc != computed_crc)
     {
         fprintf(stderr, "Error: %s has incorrect checksum.\nExpected: %x Found: %x.\n", filename, expected_crc, computed_crc);
@@ -105,6 +110,7 @@ int RomLoader_load(RomLoader* romLoader, const char* filename, const int offset,
 // Load Binary File (LayOut Levels, Tilemap Data etc.)
 int RomLoader_load_binary(RomLoader* romLoader, const char* filename)
 {
+    char* buffer;
 #ifdef __APPLE__    
     CFBundleRef mainBundle = CFBundleGetMainBundle();
     CFURLRef resourcesURL = CFBundleCopyResourcesDirectoryURL(mainBundle);
@@ -135,7 +141,7 @@ int RomLoader_load_binary(RomLoader* romLoader, const char* filename)
     romLoader->length = RomLoader_filesize(filename);
 
     // Read file
-    char* buffer = (char*)malloc(romLoader->length);
+    buffer = (char*)malloc(romLoader->length);
     fread(buffer, romLoader->length, 1, file);
     romLoader->rom = (uint8_t*) buffer;
 

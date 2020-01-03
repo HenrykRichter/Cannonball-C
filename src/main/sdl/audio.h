@@ -13,8 +13,8 @@
     This is based upon code from the Atari800 emulator project.
     Copyright (c) 1998-2008 Atari800 development team
 ***************************************************************************/
-
-#pragma once
+#ifndef _INC_SDL_AUDIO_H
+#define _INC_SDL_AUDIO_H
 
 #include "globals.h"
 
@@ -38,4 +38,4 @@ void Audio_load_wav(const char* filename);
 void Audio_clear_wav();
 
 #endif
-
+#endif

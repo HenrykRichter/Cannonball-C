@@ -7,8 +7,8 @@
     Copyright Chris White.
     See license.txt for more details.
 ***************************************************************************/
-
-#pragma once
+#ifndef _INC_SRC_MAIN_FRONTEND_CONFIG_H
+#define _INC_SRC_MAIN_FRONTEND_CONFIG_H
 
 
 #include "stdint.h"
@@ -165,4 +165,5 @@ void Config_load_tiletrial_scores();
 void Config_save_tiletrial_scores();
 Boolean Config_clear_scores();
 void Config_set_fps(int fps);
-   
+  
+#endif

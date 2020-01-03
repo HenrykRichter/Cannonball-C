@@ -257,6 +257,8 @@ void OCrash_do_crash()
             return;
     }
 
+
+    {
     // ------------------------------------------------------------------------
     // cont1: Adjust steering
     // ------------------------------------------------------------------------
@@ -276,7 +278,9 @@ void OCrash_do_crash()
             OInputs_steering_adjust = steering_adjust >> 1;
         }
     }
+    }
 
+    {
     // ------------------------------------------------------------------------
     // Determine whether to init spin or crash code
     // ------------------------------------------------------------------------
@@ -291,7 +295,9 @@ void OCrash_do_crash()
         else
             OCrash_spin_switch(spin2_copy);
     }
+    }
 
+    {
     // dec_spin1:
     int16_t spin1_copy = OCrash_spin_control1;
 
@@ -306,6 +312,7 @@ void OCrash_do_crash()
     // Not spinning, init crash code
     else
         OCrash_crash_switch();
+    }
 }
 
 // Source: 0x1224
@@ -406,8 +413,8 @@ void OCrash_init_collision()
     // Crash into scenery
     else
     {
-        OCrash_skid_counter = 0;
         uint16_t car_inc = OInitEngine_car_increment >> 16;
+        OCrash_skid_counter = 0;
         if (car_inc < 0x64)
             OCrash_collide_slow();
         else if (car_inc < 0xC8)
@@ -421,6 +428,8 @@ void OCrash_init_collision()
 // Source: 0x138C
 void OCrash_do_collision()
 {
+    uint32_t property_table;
+
     if (OLevelObjs_collision_sprite)
     {
         OLevelObjs_collision_sprite = 0;
@@ -453,8 +462,9 @@ void OCrash_do_collision()
             }
         }
     }
+
     // 0x13F8
-    uint32_t property_table = addr + (frame << 3);
+    property_table = addr + (frame << 3);
     OCrash_crash_z = OCrash_spr_ferrari->counter;
     OCrash_spr_ferrari->zoom = 0x80;
     OCrash_spr_ferrari->priority = 0x1FD;
@@ -590,18 +600,21 @@ void OCrash_end_collision()
 // Source: 0x12BE
 void OCrash_do_bump()
 {
+    int16_t new_position;
+    uint32_t frames;
+
     OFerrari_car_ctrl_active = FALSE;   // Disable user control of car
     OCrash_spr_ferrari->zoom = 0x80;           // Set Entry Number For Zoom Lookup Table
     OCrash_spr_ferrari->priority = 0x1FD;
     
-    int16_t new_position = (int8_t) RomLoader_read8(&Roms_rom0, DATA_MOVEMENT + (lookup_index << 3));
+    new_position = (int8_t) RomLoader_read8(&Roms_rom0, DATA_MOVEMENT + (lookup_index << 3));
 
     if (new_position)
         OCrash_crash_z = OCrash_spr_ferrari->counter;
 
     OCrash_spr_ferrari->y = 221 - (new_position >> shift);
 
-    uint32_t frames = addr + (frame << 3);
+    frames = addr + (frame << 3);
     OCrash_spr_ferrari->addr = RomLoader_read32(Roms_rom0p, frames);
     
     if (RomLoader_read8(Roms_rom0p, frames + 4))
@@ -627,6 +640,10 @@ void OCrash_do_bump()
 // Source: 0x1562
 void OCrash_do_car_flip()
 {
+    uint32_t frames;
+    int16_t x_diff; 
+    int16_t passenger_frame;
+
     // Do this if during the flip, the car has recollided with a new sprite + slow crash (similar to spin_collide)
     if (OLevelObjs_collision_sprite && crash_speed == 1)
     {
@@ -678,7 +695,7 @@ void OCrash_do_car_flip()
     
     // flip_cont
     OLevelObjs_collision_sprite = 0; // Moved this for clarity
-    uint32_t frames = addr + (frame << 3);
+    frames = addr + (frame << 3);
     OCrash_spr_ferrari->addr = RomLoader_read32(Roms_rom0p, frames);
 
     // ------------------------------------------------------------------------
@@ -715,10 +732,10 @@ void OCrash_do_car_flip()
     // use ferrari_OCrash_crash_z to set priority
     OCrash_spr_ferrari->priority = OCrash_spr_ferrari->counter > 0x1FD ? 0x1FD : OCrash_spr_ferrari->counter;
 
-    int16_t x_diff = (slide * OCrash_spr_ferrari->priority) >> 9;
+    x_diff = (slide * OCrash_spr_ferrari->priority) >> 9;
     OInitEngine_car_x_pos -= x_diff;
 
-    int16_t passenger_frame = (int8_t) RomLoader_read8(Roms_rom0p, 6 + frames);
+    passenger_frame = (int8_t) RomLoader_read8(Roms_rom0p, 6 + frames);
 
     // Start of sequence
     if (passenger_frame == 0)
@@ -734,10 +751,12 @@ void OCrash_do_car_flip()
     // 0x16CC
     passenger_frame = (passenger_frame * OCrash_spr_ferrari->priority) >> 9;
 
+    {
     // Set Ferrari Y
     int16_t y = -(ORoad_road_y[ORoad_road_p0 + OCrash_spr_ferrari->priority] >> 4) + 223;
     y -= passenger_frame;
     OCrash_spr_ferrari->y = y;
+    }
 
     // Set Ferrari Zoom from Z
     OCrash_spr_ferrari->zoom = (OCrash_spr_ferrari->counter >> 2);
@@ -817,8 +836,9 @@ void OCrash_init_finger(uint32_t frames)
 // Source: 0x17D2
 void OCrash_trigger_smoke()
 {
-    OCrash_crash_z = OCrash_spr_ferrari->counter;
     int16_t slide_copy = slide;
+
+    OCrash_crash_z = OCrash_spr_ferrari->counter;
 
     if (slide < 0)
         slide++;
@@ -861,6 +881,9 @@ void OCrash_trigger_smoke()
 // Source: 0x1870
 void OCrash_post_flip_anim()
 {
+	int16_t road_width;
+	int16_t car_x_pos;
+
     OFerrari_car_ctrl_active = FALSE;  // Car and road updates disabled
     if (--crash_delay > 0)
     {
@@ -871,8 +894,8 @@ void OCrash_post_flip_anim()
     OFerrari_car_ctrl_active = TRUE;
     OCrash_crash_state = 6; // Denote pan camera to track centre
     
-    int16_t road_width = ORoad_road_width >> 16;
-    int16_t car_x_pos  = OInitEngine_car_x_pos;
+    road_width = ORoad_road_width >> 16;
+    car_x_pos  = OInitEngine_car_x_pos;
     camera_xinc = 8;
     
     // Double Road
@@ -907,11 +930,13 @@ void OCrash_post_flip_anim()
 // Source: 0x18EC
 void OCrash_pan_camera()
 {
+    int16_t x_diff;
+
     OFerrari_car_ctrl_active = TRUE;
 
     OInitEngine_car_x_pos += camera_xinc;
 
-    int16_t x_diff = (OFerrari_car_x_diff * OCrash_spr_ferrari->counter) >> 9;
+    x_diff = (OFerrari_car_x_diff * OCrash_spr_ferrari->counter) >> 9;
     OCrash_spr_ferrari->x += x_diff;
 
     // Pan Right
@@ -933,9 +958,14 @@ void OCrash_pan_camera()
 // Source: 0x1C7E
 void OCrash_init_spin1()
 {
+    uint16_t car_inc;
+    uint16_t spins;
+
     OSoundInt_queue_sound(sound_INIT_SLIP);
-    uint16_t car_inc = OInitEngine_car_increment >> 16;
-    uint16_t spins = 1;
+    car_inc = OInitEngine_car_increment >> 16;
+    spins = 1;
+
+
     if (car_inc > 0xB4)
         spins += outils_random() & 1;
 
@@ -962,8 +992,9 @@ void OCrash_init_spin1()
 // Source: 0x1C10
 void OCrash_init_spin2()
 {
+    uint16_t car_inc;
     OSoundInt_queue_sound(sound_INIT_SLIP);
-    uint16_t car_inc = OInitEngine_car_increment >> 16;
+    car_inc = OInitEngine_car_increment >> 16;
     spinflipcount1 = 1;
     OCrash_crash_spin_count = 2;
     spinflipcount2 = 8;
@@ -991,10 +1022,12 @@ void OCrash_init_spin2()
 // Source: 0x19EE
 void OCrash_collide_slow()
 {
+    uint16_t car_inc;
+    int16_t y;
     OSoundInt_queue_sound(sound_REBOUND);
     
     // Setup shift value for car bump, based on current speed, which ultimately determines how much car rises in air
-    uint16_t car_inc = OInitEngine_car_increment >> 16;
+    OInitEngine_car_increment >> 16;
 
     if (car_inc <= 0x28)
         shift = 6;
@@ -1006,7 +1039,7 @@ void OCrash_collide_slow()
     lookup_index = 0;
 
     // Calculate change in road y, so we can determine incline frame for ferrari
-    int16_t y = ORoad_road_y[ORoad_road_p0 + (0x3E0 / 2)] - ORoad_road_y[ORoad_road_p0 + (0x3F0 / 2)];
+    y = ORoad_road_y[ORoad_road_p0 + (0x3E0 / 2)] - ORoad_road_y[ORoad_road_p0 + (0x3F0 / 2)];
     frame_restore = 0;
     if (y >= 0x12) frame_restore++;
     if (y >= 0x13) frame_restore++;
@@ -1031,10 +1064,11 @@ void OCrash_collide_slow()
 // Source: 0x1A98
 void OCrash_collide_med()
 {
+    uint16_t car_inc;
     OSoundInt_queue_sound(sound_INIT_SLIP);
     
     // Set number of spins based on car speed
-    uint16_t car_inc = OInitEngine_car_increment >> 16;    
+    car_inc = OInitEngine_car_increment >> 16;    
     spinflipcount1 = car_inc <= 0x96 ? 1 : 2;
     spinflipcount2 = OCrash_crash_spin_count = 2;
     slide = ((spinflipcount1 + 1) << 2) + ((car_inc > 0xFF ? 0xFF : car_inc) >> 3);
@@ -1062,9 +1096,10 @@ void OCrash_collide_med()
 // Source: 0x1B12
 void OCrash_collide_fast()
 {
+    uint16_t car_inc;
     OSoundInt_queue_sound(sound_CRASH1);
 
-    uint16_t car_inc = OInitEngine_car_increment >> 16;
+    car_inc = OInitEngine_car_increment >> 16;
     if (car_inc > 0xFA)
     {
         OCrash_crash_zinc = 1;
@@ -1142,6 +1177,8 @@ void OCrash_done(oentry* sprite)
 void OCrash_do_shadow(oentry* src_sprite, oentry* dst_sprite)
 {
     uint8_t shadow_shift;
+    uint16_t counter;
+    uint16_t offset;
 
     // Ferrari Shadow
     if (src_sprite == OCrash_spr_ferrari)
@@ -1158,12 +1195,12 @@ void OCrash_do_shadow(oentry* src_sprite, oentry* dst_sprite)
     dst_sprite->road_priority = src_sprite->road_priority;
 
     // Get Z from source sprite (stored in counter)
-    uint16_t counter = (src_sprite->counter) >> shadow_shift;
+    counter = (src_sprite->counter) >> shadow_shift;
     counter = counter - (counter >> 2);
     dst_sprite->zoom = (uint8_t) counter;
 
     // Set shadow y
-    uint16_t offset = src_sprite->counter > 0x1FF ? 0x1FF : src_sprite->counter;
+    offset = src_sprite->counter > 0x1FF ? 0x1FF : src_sprite->counter;
     dst_sprite->y = -(ORoad_road_y[ORoad_road_p0 + offset] >> 4) + 223;
 
     if (ORoad_get_view_mode() != ROAD_VIEW_INCAR || crash_type == CRASH_FLIP)
@@ -1223,9 +1260,10 @@ void OCrash_do_crash_passengers(oentry* sprite)
 void OCrash_crash_pass1(oentry* sprite)
 {
     uint32_t frames = (sprite == OCrash_spr_pass1 ? Outrun_adr.sprite_crash_man1 : Outrun_adr.sprite_crash_girl1) + (spin_pass_frame << 3);
+    uint8_t props;
     
     sprite->addr    = RomLoader_read32(Roms_rom0p, frames);
-    uint8_t props   = RomLoader_read8(Roms_rom0p, 4 + frames);
+    props   = RomLoader_read8(Roms_rom0p, 4 + frames);
     sprite->pal_src = RomLoader_read8(Roms_rom0p, 5 + frames);
     sprite->x       = OCrash_spr_ferrari->x + (int8_t) RomLoader_read8(Roms_rom0p, 6 + frames);
     sprite->y       = OCrash_spr_ferrari->y + (int8_t) RomLoader_read8(Roms_rom0p, 7 + frames);
@@ -1260,13 +1298,14 @@ void OCrash_crash_pass1(oentry* sprite)
 void OCrash_crash_pass2(oentry* sprite)
 {
     uint32_t frames = (sprite == OCrash_spr_pass1 ? Outrun_adr.sprite_crash_man2 : Outrun_adr.sprite_crash_girl2);
+    uint8_t props;
 
     // Use OCrash_coll_count2 to select one of the three animations that can be played
     // Use crash_delay to toggle between two distinct frames
     frames += ((OCrash_coll_count2 & 3) << 4) + (crash_delay & 8);
     
     sprite->addr    = RomLoader_read32(Roms_rom0p, frames);
-    uint8_t props   = RomLoader_read8(Roms_rom0p, 4 + frames);
+    props   = RomLoader_read8(Roms_rom0p, 4 + frames);
     sprite->pal_src = RomLoader_read8(Roms_rom0p, 5 + frames);
     sprite->x       = OCrash_spr_ferrari->x + (int8_t) RomLoader_read8(Roms_rom0p, 6 + frames);
     sprite->y       = OCrash_spr_ferrari->y + (int8_t) RomLoader_read8(Roms_rom0p, 7 + frames);
@@ -1425,16 +1464,21 @@ void OCrash_pass_flip(oentry* sprite)
         sprite->counter -= zinc;
     }
 
+    {
     // set_z_lookup
     int16_t zoom = sprite->counter >> 2;
+    uint32_t frames;
+    uint16_t offset;
+    int16_t y_change;
+
     if (zoom < 0x40) zoom = 0x40;
     sprite->zoom = (uint8_t) zoom;
 
-    uint32_t frames = sprite->z + (sprite->xw1 << 3);
+    frames = sprite->z + (sprite->xw1 << 3);
     sprite->addr = RomLoader_read32(Roms_rom0p, frames);
 
-    uint16_t offset = sprite->counter > 0x1FF ? 0x1FF : sprite->counter;
-    int16_t y_change = (((int8_t) RomLoader_read8(Roms_rom0p, 6 + frames)) * offset) >> 9; // d1
+    offset = sprite->counter > 0x1FF ? 0x1FF : sprite->counter;
+    y_change = (((int8_t) RomLoader_read8(Roms_rom0p, 6 + frames)) * offset) >> 9; // d1
 
     sprite->y = -(ORoad_road_y[ORoad_road_p0 + offset] >> 4) + 223;
     sprite->y -= y_change;
@@ -1478,6 +1522,7 @@ void OCrash_pass_flip(oentry* sprite)
     sprite->x =  OCrash_spr_ferrari->x;
     sprite->x += ((int8_t) RomLoader_read8(Roms_rom0p, 5 + frames));
     OCrash_done(sprite);
+    }
 }
 
 // Passengers sit up on road after crash
@@ -1486,9 +1531,9 @@ void OCrash_pass_situp(oentry* sprite)
 {
     // Update passenger x position
     int16_t x_diff = (OFerrari_car_x_diff * sprite->counter) >> 9;
+    uint32_t frames = sprite->z + (sprite->xw1 << 3);
     sprite->x += x_diff;
 
-    uint32_t frames = sprite->z + (sprite->xw1 << 3);
     sprite->addr    = RomLoader_read32(Roms_rom0p, frames);
     sprite->pal_src = RomLoader_read8(Roms_rom0p, 4 + frames);
 
@@ -1520,9 +1565,9 @@ void OCrash_pass_turnhead(oentry* sprite)
 {
     // Update passenger x position
     int16_t x_diff = (OFerrari_car_x_diff * sprite->counter) >> 9;
+    uint32_t frames = sprite->z + (sprite->xw1 << 3);
     sprite->x += x_diff;
 
-    uint32_t frames = sprite->z + (sprite->xw1 << 3);
     sprite->addr    = RomLoader_read32(Roms_rom0p, frames);
     sprite->pal_src = RomLoader_read8(Roms_rom0p, 4 + frames);
 

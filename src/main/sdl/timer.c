@@ -9,7 +9,7 @@
     See license.txt for more details.
 ***************************************************************************/
 
-void Timer_init(Timer* timer)
+void Timer_init(Timer* timer,Uint32 granularity)
 {
     //Initialize the variables
     timer->startTicks = 0;
@@ -17,6 +17,10 @@ void Timer_init(Timer* timer)
     timer->paused = FALSE;
     timer->started = FALSE;
 }
+
+void Timer_destroy(Timer*timer)
+{}
+
 
 void Timer_start(Timer* timer)
 {
@@ -27,7 +31,7 @@ void Timer_start(Timer* timer)
     timer->paused = FALSE;
 
     //Get the current clock time
-    timer->startTicks = getMilliseconds();
+    timer->startTicks = SDL_GetTicks();
 }
 
 void Timer_stop(Timer* timer)
@@ -39,6 +43,8 @@ void Timer_stop(Timer* timer)
     timer->paused = FALSE;
 }
 
+
+
 void Timer_pause(Timer* timer)
 {
     //If the timer is running and isn't already paused
@@ -48,7 +54,7 @@ void Timer_pause(Timer* timer)
         timer->paused = TRUE;
 
         //Calculate the paused ticks
-        timer->pausedTicks = getMilliseconds() - timer->startTicks;
+        timer->pausedTicks = SDL_GetTicks() - timer->startTicks;
     }
 }
 
@@ -61,7 +67,7 @@ void Timer_unpause(Timer* timer)
         timer->paused = FALSE;
 
         //Reset the starting ticks
-        timer->startTicks = getMilliseconds() - timer->pausedTicks;
+        timer->startTicks = SDL_GetTicks() - timer->pausedTicks;
 
         //Reset the paused ticks
         timer->pausedTicks = 0;
@@ -82,12 +88,17 @@ int Timer_get_ticks(Timer* timer)
         else
         {
             //Return the current time minus the start time
-            return getMilliseconds() - timer->startTicks;
+            return SDL_GetTicks() - timer->startTicks;
         }
     }
 
     //If the timer isn't running
     return 0;
+}
+
+void Timer_delay( Timer *timer, Uint32 delay_ms )
+{
+	SDL_Delay(delay_ms);
 }
 
 Boolean Timer_is_started(Timer* timer)

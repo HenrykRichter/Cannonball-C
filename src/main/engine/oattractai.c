@@ -63,6 +63,8 @@ void OAttractAI_init()
 
 void OAttractAI_tick_ai_enhanced()
 {
+    int16_t future_x; 
+ 
     // --------------------------------------------------------------------------------------------
     // Choose Route At Random
     // --------------------------------------------------------------------------------------------
@@ -76,8 +78,7 @@ void OAttractAI_tick_ai_enhanced()
     // --------------------------------------------------------------------------------------------
     // Steering
     // --------------------------------------------------------------------------------------------
-    int16_t future_x; 
-    
+   
     // Select road at road split
     if (OInitEngine_rd_split_state > 0 && OInitEngine_rd_split_state < 8)
         future_x = OFerrari_sprite_ai_x ? ORoad_road0_h[0x40] : ORoad_road1_h[0x40];
@@ -109,10 +110,10 @@ void OAttractAI_tick_ai_enhanced()
         // Single Road
         if (ORoad_road_ctrl == ROAD_R0 || ORoad_road_ctrl == ROAD_R1)
         {
-            x += road_width;
-
             static int16_t NEAR = 0xD4 - 0x4A;
             static int16_t FAR  = 0x104 - 0x4A;
+
+            x += road_width;
 
             // Don't break
             if (x > -NEAR && x <= NEAR)      OInputs_brake_adjust = 0;

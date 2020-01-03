@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _INC_SRC_MAIN_MAIN_H
+#define _INC_SRC_MAIN_MAIN_H
 
 #include "globals.h"
 
@@ -32,3 +33,4 @@ enum
     STATE_GAME,
     STATE_QUIT
 };
+#endif

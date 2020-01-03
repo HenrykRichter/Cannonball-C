@@ -10,8 +10,8 @@
     Copyright Chris White.
     See license.txt for more details.
 ***************************************************************************/
-
-#pragma once
+#ifndef _INC_SRC_MAIN_ENGINE_OANIMSPRITE_H
+#define _INC_SRC_MAIN_ENGINE_OANIMSPRITE_H
 
 #include "oentry.h"
 
@@ -51,3 +51,4 @@ typedef struct
     int16_t anim_state;
 
 } oanimsprite;
+#endif

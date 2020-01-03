@@ -1475,13 +1475,16 @@ int XMLDoc_parse_file_SAX(const SXML_CHAR* filename, const SAX_Callbacks* sax, v
 	int ret;
 	SAX_Data sd;
 	SXML_CHAR* fmode = 
+#ifdef _AMIGA_
+	C2SX("rb");
+#else
 #ifndef SXMLC_UNICODE
 	C2SX("rt");
 #else
 	C2SX("rb"); /* In Unicode, open the file as binary so that further 'fgetwc' read all bytes */
 	BOM_TYPE bom;
 #endif
-
+#endif
 
 	if (sax == NULL || filename == NULL || filename[0] == NULC)
 		return false;

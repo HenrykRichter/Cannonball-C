@@ -119,7 +119,13 @@ Boolean TrackLoader_set_layout_track(const char* filename)
 void TrackLoader_init_original_tracks(Boolean jap)
 {
     int i = 0;
-    
+    static const uint32_t STAGE_ORDER[] = { 0, 
+                                           0x8, 0x9, 
+                                           0x10, 0x11, 0x12, 
+                                           0x18, 0x19, 0x1A, 0x1B, 
+                                           0x20, 0x21, 0x22, 0x23, 0x24};
+
+   
     TrackLoader_stage_data = jap ? STAGE_MAPPING_JAP : STAGE_MAPPING_USA;
 
     TrackLoader_display_start_line = TRUE;
@@ -147,22 +153,17 @@ void TrackLoader_init_original_tracks(Boolean jap)
     // Iterate and setup 15 stages
     // --------------------------------------------------------------------------------------------
 
-    static const uint32_t STAGE_ORDER[] = { 0, 
-                                            0x8, 0x9, 
-                                            0x10, 0x11, 0x12, 
-                                            0x18, 0x19, 0x1A, 0x1B, 
-                                            0x20, 0x21, 0x22, 0x23, 0x24};
-
     for (i = 0; i < STAGES; i++)
     {
         const uint16_t STAGE_OFFSET = TrackLoader_stage_data[STAGE_ORDER[i]] << 2;
+        uint32_t PATH_ADR;
 
         // CPU 0 Data
         const uint32_t STAGE_ADR = RomLoader_read32(Roms_rom0p, Outrun_adr.road_seg_table + STAGE_OFFSET);
         TrackLoader_setup_level(&TrackLoader_levels[i], Roms_rom0p, STAGE_ADR);
 
         // CPU 1 Data
-        const uint32_t PATH_ADR = RomLoader_read32(Roms_rom1p, ROAD_DATA_LOOKUP + STAGE_OFFSET);
+        PATH_ADR = RomLoader_read32(Roms_rom1p, ROAD_DATA_LOOKUP + STAGE_OFFSET);
         TrackLoader_levels[i].path = &Roms_rom1p->rom[PATH_ADR];        
     }
 
@@ -225,10 +226,11 @@ void TrackLoader_init_layout_tracks(Boolean jap)
     {
         // CPU 0 Data
         const uint32_t STAGE_ADR = RomLoader_read32(&TrackLoader_layout, LAYOUT_LEVELS + (i * sizeof(uint32_t)));
+	uint32_t PATH_ADR;
         TrackLoader_setup_level(&TrackLoader_levels[i], &TrackLoader_layout, STAGE_ADR);
 
         // CPU 1 Data
-        const uint32_t PATH_ADR = RomLoader_read32(&TrackLoader_layout, LAYOUT_PATH);
+        PATH_ADR = RomLoader_read32(&TrackLoader_layout, LAYOUT_PATH);
         TrackLoader_levels[i].path = &TrackLoader_layout.rom[ PATH_ADR + ((ROAD_END_CPU1 * sizeof(uint32_t)) * i) ];
     }
 
@@ -241,12 +243,14 @@ void TrackLoader_init_layout_tracks(Boolean jap)
     TrackLoader_level_split.path = &TrackLoader_layout.rom[ RomLoader_read32(&TrackLoader_layout, LAYOUT_SPLIT_PATH) ];
 
     // End sections don't contain palette information. Shared path.
-    uint8_t* end_path = &TrackLoader_layout.rom[ RomLoader_read32(&TrackLoader_layout, LAYOUT_END_PATH) ];
-    for (i = 0; i < 5; i++)
     {
+     uint8_t* end_path = &TrackLoader_layout.rom[ RomLoader_read32(&TrackLoader_layout, LAYOUT_END_PATH) ];
+     for (i = 0; i < 5; i++)
+     {
         const uint32_t STAGE_ADR = RomLoader_read32(&TrackLoader_layout, LAYOUT_END_LEVELS + (i * sizeof(uint32_t)));
         TrackLoader_setup_section(&TrackLoader_levels_end[i], &TrackLoader_layout, STAGE_ADR);
         TrackLoader_levels_end[i].path = end_path;
+     }
     }
 }
 

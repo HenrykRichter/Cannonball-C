@@ -80,9 +80,6 @@ void OHud_draw_fps_counter(int16_t fps)
 // Source: 0x8B68
 uint32_t OHud_setup_mini_map()
 {
-    if (OStats_route_info > 0x4F)
-        OStats_route_info = 0x4F;
-
     // Map Route to appropriate tile
     const uint8_t ROUTE_MAPPING[] =
     {
@@ -92,6 +89,10 @@ uint32_t OHud_setup_mini_map()
         0x07, 0x07, 0x08, 0x08, 0x09, 0x09, 0x0A, 0x0A, 0x0B, 0x0B, 0x0C, 0x0C, 0x0D, 0x0D, 0x0E, 0x0E,
         0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E,
     };
+
+
+    if (OStats_route_info > 0x4F)
+        OStats_route_info = 0x4F;
 
     return TILES_MINIMAP + (ROUTE_MAPPING[OStats_route_info] << 2);
 } 
@@ -122,10 +123,11 @@ void OHud_draw_mini_map(uint32_t tile_addr)
 // Source: 0x8B52
 void OHud_do_mini_map()
 {
+    uint32_t tile_addr;
     if (Outrun_game_state == GS_ATTRACT)
         return;
-    
-    uint32_t tile_addr = OHud_setup_mini_map();
+   
+    tile_addr = OHud_setup_mini_map();
     OHud_draw_mini_map(tile_addr);
 }
 
@@ -238,6 +240,7 @@ void OHud_draw_score(uint32_t addr, const uint32_t score, const uint8_t font)
     const uint16_t BLANK = 0x8020;
 
     uint8_t digits[8];
+    Boolean found;
 
     // Topmost digit
     digits[0] = ((score >> 16) & 0xF000) >> 12;
@@ -249,7 +252,7 @@ void OHud_draw_score(uint32_t addr, const uint32_t score, const uint8_t font)
     digits[6] = (score & 0xF0) >> 4;
     digits[7] = (score & 0xF);
 
-    Boolean found = FALSE;
+    found = FALSE;
 
     // Draw blank digits until we find first digit
     // Then use zero for blank digits
@@ -279,6 +282,7 @@ void OHud_draw_score_tile(uint32_t addr, const uint32_t score, const uint8_t fon
     const uint16_t BLANK = 0x8020;
 
     uint8_t digits[8];
+    Boolean found;
 
     // Topmost digit
     digits[0] = ((score >> 16) & 0xF000) >> 12;
@@ -290,7 +294,7 @@ void OHud_draw_score_tile(uint32_t addr, const uint32_t score, const uint8_t fon
     digits[6] = (score & 0xF0) >> 4;
     digits[7] = (score & 0xF);
 
-    Boolean found = FALSE;
+    found = FALSE;
 
     // Draw blank digits until we find first digit
     // Then use zero for blank digits
@@ -332,16 +336,6 @@ void OHud_draw_stage_number(uint32_t addr, uint8_t digit, uint16_t col)
 void OHud_draw_rev_counter()
 {
     int8_t i;
-    // Return in attract mode and don't draw rev counter
-    if (Outrun_game_state <= GS_INIT_GAME) return;
-    uint16_t revs = OFerrari_rev_stop_flag ? OFerrari_revs_post_stop : OFerrari_revs >> 16;
-    
-    // Boost revs during countdown phase, so the bar goes further into the red
-    if (OInitEngine_car_increment >> 16 == 0)
-        revs += (revs >> 2);
-
-    revs >>= 4;
-
     uint32_t addr = 0x110DB4; // Address of rev counter
         
     const uint16_t REV_OFF = 0x8120; // Rev counter: Off (Blank Tile)
@@ -350,6 +344,17 @@ void OHud_draw_rev_counter()
     const uint16_t GREEN = 0x200;
     const uint16_t WHITE = 0x400;
     const uint16_t RED   = 0x600;
+    uint16_t revs;
+
+    // Return in attract mode and don't draw rev counter
+    if (Outrun_game_state <= GS_INIT_GAME) return;
+    revs = OFerrari_rev_stop_flag ? OFerrari_revs_post_stop : OFerrari_revs >> 16;
+    
+    // Boost revs during countdown phase, so the bar goes further into the red
+    if (OInitEngine_car_increment >> 16 == 0)
+        revs += (revs >> 2);
+
+    revs >>= 4;
 
     for (i = 0; i <= 0x13; i++)
     {
@@ -390,13 +395,14 @@ void OHud_draw_rev_counter()
 void OHud_blit_speed(uint32_t dst_addr, uint16_t speed)
 {
     const uint16_t TILE_BASE = 0x8C60; // Base tile number
+    uint16_t digit1,digit2,digit3;
 
     // Convert to human readable speed
     speed = outils_convert16_dechex(speed);
 
-    uint16_t digit1 = speed & 0xF;
-    uint16_t digit2 = (speed & 0xF0) >> 4;
-    uint16_t digit3 = (speed & 0xF00) >> 8;
+    digit1 = speed & 0xF;
+    digit2 = (speed & 0xF0) >> 4;
+    digit3 = (speed & 0xF00) >> 8;
 
     digit3 <<= 1;
     if (digit3 == 0)
@@ -565,6 +571,7 @@ void OHud_blit_text1XY(uint8_t x, uint8_t y, uint32_t src_addr)
     uint16_t i;
     uint32_t dst_addr = OHud_translate(x, y, 0x110030);
     src_addr += 4;
+   {
     uint16_t counter = RomLoader_read16IncP(&Roms_rom0, &src_addr);  // Number of tiles to blit
     uint16_t data = RomLoader_read16IncP(&Roms_rom0, &src_addr);     // Tile data to blit
 
@@ -574,6 +581,7 @@ void OHud_blit_text1XY(uint8_t x, uint8_t y, uint32_t src_addr)
         data = (data & 0xFF00) | RomLoader_read8IncP(&Roms_rom0, &src_addr);
         Video_write_text16IncP(&dst_addr, data);
     }
+   }
 }
 
 // Blit Tiles to text ram layer (Double Row)
@@ -597,9 +605,10 @@ void OHud_blit_text2(uint32_t src_addr)
     uint32_t dst_addr = 0x110000 + RomLoader_read16IncP(&Roms_rom0, &src_addr); // Text RAM destination address
 
     uint16_t pal = RomLoader_read8IncP(&Roms_rom0, &src_addr); 
-    pal = 0x80A0 | ((pal << 9) | (pal >> 7) & 1);
     // same as ror 7 and extending to word
     uint16_t counter = RomLoader_read8IncP(&Roms_rom0, &src_addr); // Number of tiles to blit
+
+    pal = 0x80A0 | ((pal << 9) | (pal >> 7) & 1);
 
     // Blit each tile
     for (i = 0; i <= counter; i++)
@@ -650,6 +659,7 @@ void OHud_blit_text_big(const uint8_t Y, const char* text, Boolean do_notes)
     uint16_t length = strlen(text);
 
     const uint16_t X = 20 - (length >> 1);
+    uint32_t dst_addr;
 
     // Clear complete row in text ram before blitting
     for (x = 0; x < 40; x++)
@@ -669,7 +679,7 @@ void OHud_blit_text_big(const uint8_t Y, const char* text, Boolean do_notes)
         Video_write_text32(OHud_translate(X - 2, Y, 0x110030) + 0x110080, NOTE_TILES2);
     }
 
-    uint32_t dst_addr = OHud_translate(X, Y, 0x110030) + 0x110000;
+    dst_addr = OHud_translate(X, Y, 0x110030) + 0x110000;
 
     // Blit each tile
     for (i = 0; i < length; i++)

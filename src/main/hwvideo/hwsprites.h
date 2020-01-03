@@ -1,5 +1,5 @@
-#pragma once
-
+#ifndef _INC_SRC_MAIN_HWVIDEO_HWSPRITES_H
+#define _INC_SRC_MAIN_HWVIDEO_HWSPRITES_H
 #include "stdint.h"
 
 void HWSprites_init(const uint8_t*);
@@ -10,4 +10,5 @@ uint8_t HWSprites_read(const uint16_t adr);
 void HWSprites_write(const uint16_t adr, const uint16_t data);
 void HWSprites_render(const uint8_t);
 
+#endif
 

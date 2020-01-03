@@ -6,8 +6,8 @@
     Copyright Chris White.
     See license.txt for more details.
 ***************************************************************************/
-
-#pragma once
+#ifndef _INC_SRC_MAIN_ENGINE_OUTRUN_H
+#define _INC_SRC_MAIN_ENGINE_OUTRUN_H
 
 #include "stdint.h"
 #include "roms.h"
@@ -214,4 +214,4 @@ void Outrun_tick(Packet* packet, Boolean tick_frame);
 void Outrun_vint();
 void Outrun_init_best_outrunners();
 void Outrun_select_course(Boolean jap, Boolean prototype);
-
+#endif

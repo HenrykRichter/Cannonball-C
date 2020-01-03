@@ -6,7 +6,11 @@
     See license.txt for more details.
 ***************************************************************************/
 
+#ifdef NOSDL
+#include "amiga/amigainput.h"
+#else
 #include "sdl/input.h"
+#endif
 #include "frontend/ttrial.h"
 
 #include "engine/ohud.h"

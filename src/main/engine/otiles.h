@@ -10,8 +10,8 @@
     Copyright Chris White.
     See license.txt for more details.
 ***************************************************************************/
-
-#pragma once
+#ifndef _INC_SRC_MAIN_ENGINE_OTILES_H
+#define _INC_SRC_MAIN_ENGINE_OTILES_H
 
 #include "outrun.h"
 
@@ -35,4 +35,5 @@ void OTiles_fill_tilemap_color(uint16_t);
 void OTiles_write_tilemap_hw();
 void OTiles_set_scroll(int16_t h_scroll, int16_t v_scroll);
 
+#endif
 

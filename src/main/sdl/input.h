@@ -7,13 +7,17 @@
     Copyright Chris White.
     See license.txt for more details.
 ***************************************************************************/
-
-#pragma once
+#ifndef _INC_SDL_INPUT_H
+#define _INC_SDL_INPUT_H
 
 #include "stdint.h"
-#include <SDL.h>
+#if 0 //#ifdef NOSDL
+#include "amiga/P96SDLAdapter.h"
+#else
+#include <SDL/SDL.h>
+#endif
 
-typedef enum presses
+enum presses
 {
     INPUT_LEFT  = 0,
     INPUT_RIGHT = 1,
@@ -63,3 +67,5 @@ void Input_frame_done();
 Boolean Input_is_pressed(enum presses p);
 Boolean Input_is_pressed_clear(enum presses p);
 Boolean Input_has_pressed(enum presses p);
+
+#endif

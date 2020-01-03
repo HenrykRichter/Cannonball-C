@@ -1,3 +1,6 @@
+/* global disable switch */
+#ifndef NOCAMD
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -20,19 +23,34 @@
 #include <midi/camd.h>
 #include <midi/camdbase.h>
 #include <midi/mididefs.h>
-#include <pragmas/camd_pragmas.h>
+//#include <pragmas/camd_pragmas.h>
 
 /* CAMD Real Time Library Includes */
 
 #include <libraries/realtime.h>
 
+#define __NOLIBBASE__
 #include <proto/camd.h>
-#include <inline/camd.h>
+//#include <inline/camd.h>
 
  
 char MIDIName[256];
 typedef int boolean;
  
+struct DecTrack { ULONG absdelta;   /* 32-bit delta */
+                  ULONG nexclock;   /* storage */
+                  UBYTE status;     /* status from file */
+                  UBYTE rstatus;    /* running status from track */
+                  UBYTE d1;         /* data byte 1 */
+                  UBYTE d2;         /* data byte 2 */
+                  ULONG absmlength; /* 32-bit absolute metalength */
+                  UBYTE *endmarker;
+                  UBYTE metatype;   /* meta event type */
+                  BOOL playable;
+                  UBYTE pad3;
+                };
+
+
 /*-------------------*/
 /*     Prototypes    */
 /*-------------------*/
@@ -58,19 +76,6 @@ struct SMFHeader {LONG     ChunkID;  /* 4 ASCII characters */
                   WORD     Division;
                  };
 
-
-struct DecTrack { ULONG absdelta;   /* 32-bit delta */
-                  ULONG nexclock;   /* storage */
-                  UBYTE status;     /* status from file */
-                  UBYTE rstatus;    /* running status from track */
-                  UBYTE d1;         /* data byte 1 */
-                  UBYTE d2;         /* data byte 2 */
-                  ULONG absmlength; /* 32-bit absolute metalength */
-                  UBYTE *endmarker;
-                  UBYTE metatype;   /* meta event type */
-                  BOOL playable;
-                  UBYTE pad3;
-                };
 
 /*------------------*/
 /* MIDI Header File */
@@ -197,7 +202,7 @@ void I_CAMD_ShutdownMusic(void)
     
     if (p)
     {
-        Signal(p,midiSignal | SIGBREAKF_CTRL_C);
+        Signal( (struct Task*)p,midiSignal | SIGBREAKF_CTRL_C);
         p = NULL;
     }
     
@@ -270,7 +275,7 @@ void I_CAMD_PlaySong(char *filename)
         if (p)
         {
              
-            Signal(p,midiSignal | SIGBREAKF_CTRL_C);
+            Signal( (struct Task*)p,midiSignal | SIGBREAKF_CTRL_C);
             if(Playing)	        ParseMidi(pMidiLink,AllNotesOff,ALLNOTESOFFLEN);
             if(pPlayer)         DeletePlayer(pPlayer);
             if(midiSignal != -1)FreeSignal(midiSignal);
@@ -280,7 +285,7 @@ void I_CAMD_PlaySong(char *filename)
             if(smfhandle)       Close(smfhandle);
             if(smfdata)         FreeMem(smfdata,smfdatasize);        
     
-            RemTask(p);
+            RemTask( (struct Task*)p);
             
             p = NULL;
             Playing = FALSE;
@@ -301,9 +306,9 @@ void I_CAMD_PlaySong(char *filename)
         strcpy(MIDIName,filename);         
         
         p = CreateNewProcTags(
-            NP_Entry, &CAMDWorker,
+            NP_Entry, (ULONG)&CAMDWorker,
             NP_Priority, 2,
-            NP_Name, "CAMDMidiOut",
+            NP_Name, (ULONG)"CAMDMidiOut",
             TAG_DONE);        
         
     }
@@ -324,7 +329,7 @@ void I_CAMD_StopSong(void)
     if (p)
     {
     
-        Signal(p,midiSignal | SIGBREAKF_CTRL_C);
+        Signal( (struct Task*)p,midiSignal | SIGBREAKF_CTRL_C);
         if(Playing)	       ParseMidi(pMidiLink,AllNotesOff,ALLNOTESOFFLEN);
         if(pPlayer)         DeletePlayer(pPlayer);
         if(midiSignal != -1)FreeSignal(midiSignal);
@@ -334,7 +339,7 @@ void I_CAMD_StopSong(void)
         if(smfhandle)       Close(smfhandle);
         if(smfdata)         FreeMem(smfdata,smfdatasize);
     
-        RemTask(p);
+        RemTask( (struct Task*)p);
     
         p = NULL;
         Playing = FALSE;
@@ -511,10 +516,17 @@ void CAMDWorker(void)
     /* Set up a MidiNode and a MidiLink.  Link the  */
     /* node to the default "out.0" MidiCluster .    */
     /*----------------------------------------------*/
+#if 1
+    {
+     struct TagItem tg[4] = { {MIDI_Name,(ULONG)"PlayMF Player"},{MIDI_MsgQueue, 0L},{MIDI_SysExSize,0L},{TAG_END,0L}};
+     pMidiNode=CreateMidiA( tg );
+    }
+#else
     pMidiNode=CreateMidi( MIDI_Name,    "PlayMF Player",
                          MIDI_MsgQueue, 0L,     /* This is a send-only   */
                          MIDI_SysExSize,0L,     /* MIDI node so no input */
                          TAG_END);              /* buffers are needed.   */
+#endif
     if(!pMidiNode)
       kill("No memory for MIDI Node\n");
     
@@ -641,9 +653,9 @@ void CAMDWorker(void)
     if(midiSignal==-1)
        kill("Couldn't allocate a signal bit\n");
     
-    pPlayer=CreatePlayer(     PLAYER_Name,	"PlayMF Player",
-                             PLAYER_Conductor,  "PlayMF Conductor",
-                             PLAYER_AlarmSigTask, mt,
+    pPlayer=(struct Player*)CreatePlayer(    PLAYER_Name,	(ULONG)"PlayMF Player",
+                             PLAYER_Conductor,  (ULONG)"PlayMF Conductor",
+                             PLAYER_AlarmSigTask, (ULONG)mt,
                              PLAYER_AlarmSigBit,midiSignal,
                              TAG_END);
     if(!pPlayer)
@@ -813,9 +825,9 @@ static void I_CAMD_PollMusic(void)
             notdone = TRUE;         
             
             p = CreateNewProcTags(
-                NP_Entry, &CAMDWorker,
+                NP_Entry, (ULONG)&CAMDWorker,
                 NP_Priority, 2,
-                NP_Name, "CAMDMidiOut",
+                NP_Name, (ULONG)"CAMDMidiOut",
                 TAG_DONE);
     
         }
@@ -1075,3 +1087,8 @@ kill(char *killstring)
    if(*killstring)     printf(killstring);
   
 }
+
+/* global disable switch */
+#endif /* NOCAMD */
+
+

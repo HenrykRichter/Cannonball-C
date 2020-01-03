@@ -5,8 +5,8 @@
     Copyright Chris White.
     See license.txt for more details.
 ***************************************************************************/
-
-#pragma once
+#ifndef _SRC_MAIN_ENGINE_AUDIO_COMMANDS_H
+#define _SRC_MAIN_ENGINE_AUDIO_COMMANDS_H
 
     // ----------------------------------------------------------------------------
     // Commands to send from main program code
@@ -67,3 +67,4 @@ enum
     sound_TRAFFIC3,
     sound_TRAFFIC4,
 };
+#endif

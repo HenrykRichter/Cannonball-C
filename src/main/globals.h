@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _INC_SRC_MAIN_GLOBALS_H
+#define _INC_SRC_MAIN_GLOBALS_H
 
 #include "stdint.h"
 
@@ -58,3 +59,5 @@ enum
     BIT_9 = 0x200,
     BIT_A = 0x400
 };
+
+#endif

@@ -34,7 +34,12 @@ void OMusic_blit_music_select();
 RomLoader tilemap;
 RomLoader tile_patch;
 
-
+#ifdef _AMIGA_
+#ifdef NOCAMD
+#include "amiga/Sound.h"
+void *mod = NULL;
+#endif
+#endif
 
 // Load Modified Widescreen version of tilemap
 Boolean OMusic_load_widescreen_map()
@@ -223,12 +228,13 @@ void OMusic_tick()
     // Note tiles to append to left side of text
     const uint32_t NOTE_TILES1 = 0x8A7A8A7B;
     const uint32_t NOTE_TILES2 = 0x8A7C8A7D;
+    oentry *e,*e2,*hand;
 
     // Radio Sprite
     OSprites_do_spr_order_shadows(&OSprites_jump_table[entry_start + 0]);
 
     // Animated EQ Sprite (Cycle the graphical equalizer on the radio)
-    oentry *e = &OSprites_jump_table[entry_start + 1];
+    e = &OSprites_jump_table[entry_start + 1];
     e->reload++; // Increment palette entry
     e->pal_src = RomLoader_read8(&Roms_rom0, (e->reload & 0x3E) >> 1 | MUSIC_EQ_PAL);
     OSprites_map_palette(e);
@@ -237,8 +243,8 @@ void OMusic_tick()
     // Draw appropriate FM station on radio, depending on steering setting
     // Draw Dial on radio, depending on steering setting
     e = &OSprites_jump_table[entry_start + 2];
-    oentry *e2 = &OSprites_jump_table[entry_start + 3];
-    oentry *hand = &OSprites_jump_table[entry_start + 4];
+    e2 = &OSprites_jump_table[entry_start + 3];
+    hand = &OSprites_jump_table[entry_start + 4];
 
     // Steer Left
     if (OInputs_steering_adjust + 0x80 <= 0x55)
@@ -316,50 +322,64 @@ void OMusic_tick()
     // Enhancement: Preview Music On Sound Selection Screen
     if (Config_sound.preview)
     {
-        //if (mod)
-        //{
-        //    SND_StopModule();
-        //    SND_EjectModule(mod);            
-        //    mod = NULL;
-        //}
-        
+#ifdef NOCAMD
+        if (mod)
+        {
+            SND_StopModule();
+            SND_EjectModule(mod); 
+            mod = NULL;
+        }
+#endif        
         switch (OMusic_music_selected)
         {
             // Cycle in-built sounds
             case SOUND_MUSIC_BREEZE:
-                //mod = SND_LoadModule("data/outrun_1.mod");
-                //SND_SetFXChannel(2);
-                //SND_PlayModule(mod);
-                
+#ifndef NOCAMD               
                 if (Config_sound.amiga_midi)
                 {
                     I_CAMD_StopSong();
                     I_CAMD_PlaySong("data/Pass-Brz.mid");
                 }
-                
+#else
+		if( Config_sound.amiga_mods )
+		{
+         	       mod = SND_LoadModule("data/outrun_1.mod");
+                	SND_SetFXChannel(2);
+                	SND_PlayModule(mod);
+		}
+#endif
                 break;
             case SOUND_MUSIC_SPLASH:
-                //mod = SND_LoadModule("data/outrun_2.mod");
-                //SND_SetFXChannel(2);                    
-                //SND_PlayModule(mod);
-                
+#ifndef NOCAMD                
                 if (Config_sound.amiga_midi)
                 {
                     I_CAMD_StopSong();
                     I_CAMD_PlaySong("data/Splash.mid");
                 }
-                
+#else
+		if( Config_sound.amiga_mods )
+		{
+         	       mod = SND_LoadModule("data/outrun_2.mod");
+                	SND_SetFXChannel(2);
+                	SND_PlayModule(mod);
+		}
+#endif                
                 break;
             case SOUND_MUSIC_MAGICAL:
-                //mod = SND_LoadModule("data/outrun_3.mod");
-                //SND_SetFXChannel(2);                    
-                //SND_PlayModule(mod);
-                
+#ifndef NOCAMD                
                 if (Config_sound.amiga_midi)
                 {
                     I_CAMD_StopSong();
                     I_CAMD_PlaySong("data/Magical.mid");
                 }
+#else
+		if( Config_sound.amiga_mods )
+		{
+         	       mod = SND_LoadModule("data/outrun_3.mod");
+                	SND_SetFXChannel(2);
+                	SND_PlayModule(mod);
+		}
+#endif
                 break;
         }
             
@@ -434,10 +454,12 @@ void OMusic_blit_music_select()
     if (tilemap.loaded && Config_s16_x_off > 0)
     {
         uint32_t tilemap16 = TILEMAP_RAM_16 - 20;
+	uint16_t rows,cols;
+
         src_addr = 0;
 
-        const uint16_t rows = RomLoader_read16IncP(&tilemap, &src_addr);
-        const uint16_t cols = RomLoader_read16IncP(&tilemap, &src_addr);
+        rows = RomLoader_read16IncP(&tilemap, &src_addr);
+        cols = RomLoader_read16IncP(&tilemap, &src_addr);
 
         for (y = 0; y < rows; y++)
         {

@@ -6,8 +6,8 @@
     Copyright Chris White.
     See license.txt for more details.
 ***************************************************************************/
-
-#pragma once
+#ifndef _INC_SRC_MAIN_ENGINE_OSMOKE_H
+#define _INC_SRC_MAIN_ENGINE_OSMOKE_H
 
 #include "outrun.h"
 
@@ -19,3 +19,4 @@ void OSmoke_init();
 void OSmoke_setup_smoke_sprite(Boolean);
 void OSmoke_draw_ferrari_smoke(oentry*);
 void OSmoke_draw(oentry*);
+#endif

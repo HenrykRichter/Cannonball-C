@@ -4,8 +4,8 @@
     Copyright Chris White.
     See license.txt for more details.
 ***************************************************************************/
-
-#pragma once
+#ifndef _INC_SRC_MAIN_ROMS_H
+#define _INC_SRC_MAIN_ROMS_H
 
 #include "romloader.h"
 
@@ -29,4 +29,4 @@ extern RomLoader* Roms_rom1p;
 Boolean Roms_load_revb_roms();
 Boolean Roms_load_japanese_roms();
 Boolean Roms_load_pcm_rom(Boolean);
-
+#endif

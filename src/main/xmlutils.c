@@ -11,9 +11,8 @@
 XMLNode* GetXmlDocNode(XMLDoc* doc, const char* path)
 {
     XMLSearch search;
+    int loop;
     XMLSearch_init_from_XPath(path, &search);
-
-    int loop = 0;
 
     for (loop = 0; loop < doc->n_nodes; loop++)
     {
@@ -48,9 +47,12 @@ int GetXMLDocValueInt(XMLDoc* doc, const char* path, int defaultValue)
     if (node != 0)
     {
         int value;
+	fprintf(stderr,"%s %s\n",path,node->text);
         sscanf(node->text, "%d", &value);
         return value;
     }   
+
+    fprintf(stderr,"%s not found\n",path);
 
     return defaultValue;
 }

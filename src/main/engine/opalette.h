@@ -6,8 +6,8 @@
     Copyright Chris White.
     See license.txt for more details.
 ***************************************************************************/
-
-#pragma once
+#ifndef _INC_SRC_MAIN_ENGINE_OPALETTE_H
+#define _INC_SRC_MAIN_ENGINE_OPALETTE_H
 
 #include "outrun.h"
 
@@ -31,3 +31,5 @@ void OPalette_setup_road_centre();
 void OPalette_setup_road_stripes();
 void OPalette_setup_road_side();
 void OPalette_setup_road_colour();
+
+#endif

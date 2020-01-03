@@ -35,8 +35,8 @@
     Copyright Chris White.
     See license.txt for more details.
 ***************************************************************************/
-
-#pragma once
+#ifndef _INC_SRC_MAIN_ENGINE_OATTRACTAI_H
+#define _INC_SRC_MAIN_ENGINE_OATTRACTAI_H
 
 #include "outrun.h"
 
@@ -47,3 +47,4 @@ void OAttractAI_tick_ai();
 void OAttractAI_check_road_bonus();
 void OAttractAI_set_steering_bonus();
 
+#endif

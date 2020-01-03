@@ -6,14 +6,35 @@
 ***************************************************************************/
 
 // SDL Library
-#include <SDL.h>
+#if 1 /* #ifndef NOSDL */
+#include <SDL/SDL.h>
 #pragma comment(lib, "SDLmain.lib") // Replace main with SDL_main
 #pragma comment(lib, "SDL.lib")
 #pragma comment(lib, "glu32.lib")
-
 // SDL Specific Code
+#endif
+
+#ifdef _AMIGA_
+#ifdef NOCAMD
+#include "amiga/Sound.h"
+extern void *mod;
+#ifdef NOSDL
+#include "amiga/amigainput.h"
+#include "amiga/amigatimer.h"
+#include <intuition/intuition.h>
+//#define P96ADAPTER_MAIN
+#include "amiga/P96Screen.h"
+extern struct P96SC_Handle*screen;
+/*#include "amiga/P96SDLAdapter.h"*/
+#endif
+#endif
+#endif
+
+#include <stdio.h>
+#ifndef NOSDL
 #include "sdl/timer.h"
 #include "sdl/input.h"
+#endif
 #include "Video.h"
 
 #include "romloader.h"
@@ -29,6 +50,7 @@
 #include "engine/oinputs.h"
 #include "engine/ooutputs.h"
 #include "engine/omusic.h"
+
 
 // Initialize Shared Variables
 int    cannonball_state       = STATE_BOOT;
@@ -50,17 +72,58 @@ static void quit_func(int code)
 #ifdef COMPILE_SOUND_CODE
     Audio_stop_audio();
 #endif
+#ifndef NOCAMD
     I_CAMD_StopSong();
     I_CAMD_ShutdownMusic();
+#else
+    SND_StopModule();
+    SND_EjectModule(mod);
+    mod = NULL;
+#endif
     Input_close();
-    //SDL_Quit();
+    Render_Quit();
+#ifndef NOSDL
+    SDL_Quit();
+#endif
     exit(code);
 }
 
 static void process_events(void)
 {
-    
-    /*
+#ifdef NOSDL
+  struct IntuiMessage     *imsg;
+  int terminate = P96SC_OK;
+  int code;
+
+  if( !screen )
+	return;
+
+  while(imsg=(struct IntuiMessage *)GetMsg(screen->window->UserPort))
+  {
+	if( imsg->Class==IDCMP_CLOSEWINDOW )
+                cannonball_state = STATE_QUIT;
+	else
+	{
+		if( imsg->Class==IDCMP_RAWKEY )
+		{
+			code = imsg->Code;
+			if( code&IECODE_UP_PREFIX )
+			{
+				code &= ~IECODE_UP_PREFIX;
+				aInput_handle_key_up( code );
+			}
+			else
+			{
+				if( code == 69 ) /* ESCAPE */
+					cannonball_state = STATE_QUIT;
+				aInput_handle_key_down( code );
+			}
+		}
+	}
+	ReplyMsg( imsg );
+  }
+  aInput_handle_joy_axis( 0 ); /* Amiga code handles joystick ports internally */
+#else
     SDL_Event event;
 
     // Grab all events from the queue.
@@ -98,8 +161,7 @@ static void process_events(void)
                 break;
         }
     }
-    
-    */
+#endif
 }
 
 // Pause Engine
@@ -107,10 +169,28 @@ Boolean pause_engine;
 
 static void tick()
 {
+    Packet *packet;
+
     cannonball_frame++;
 
-    Packet* packet = Config_cannonboard.enabled ? Interface_get_packet() : NULL;
+#if 0
+	{
+		//Printf("frame %d hires %d\n",frame,Config_video.hires);
+		Printf("hiresT %ld (cbf %ld) (state %ld)\n",Config_video.hires,cannonball_frame,(long)cannonball_state);
+		if( Config_video.hires == 0 )
+		{
+			cannonball_state = STATE_QUIT;
+			return;
+		}
+		//break;
+	}
+#endif
 
+#ifdef CANNONBOARD
+    packet = Config_cannonboard.enabled ? Interface_get_packet() : NULL;
+#else
+    packet = 0;
+#endif
     // Non standard FPS.
     // Determine whether to tick the current frame.
     if (Config_fps == 30)
@@ -120,16 +200,21 @@ static void tick()
     else if (Config_fps == 120)
         cannonball_tick_frame = (cannonball_frame & 3) == 1;
 
+
     process_events();
+
 
     if (cannonball_tick_frame)
         OInputs_tick(packet); // Do Controls
-    OInputs_do_gear();        // Digital Gear
+    if( Config_fps )		// this is actually a dummy compare forcing gcc2.95/m68k to emit different calling code
+	OInputs_do_gear();        // Digital Gear
+
 
     switch (cannonball_state)
     {
         case STATE_GAME:
         {
+		//printf("sG\n");
             if (Input_has_pressed(INPUT_TIMER))
                 Outrun_freeze_timer = !Outrun_freeze_timer;
 
@@ -159,6 +244,8 @@ static void tick()
         break;
 
         case STATE_INIT_GAME:
+		//printf("sI\n");
+
             if (Config_engine.jap && !Roms_load_japanese_roms())
             {
                 cannonball_state = STATE_QUIT;
@@ -173,6 +260,7 @@ static void tick()
 
         case STATE_MENU:
         {
+		//printf("sM\n");
             Menu_tick(packet);
             Input_frame_done();
             #ifdef COMPILE_SOUND_CODE
@@ -185,11 +273,14 @@ static void tick()
         break;
 
         case STATE_INIT_MENU:
+		//printf("sIM\n");
             OInputs_init();
             OOutputs_init();
             Menu_init();
             cannonball_state = STATE_MENU;
             break;
+	default:
+		break;
     }
 
     // Draw SDL Video
@@ -200,21 +291,26 @@ static void main_loop()
 {
     // FPS Counter (If Enabled)
     Timer fps_count;
-    int frame = 0;
-    Timer_init(&fps_count);
-    Timer_start(&fps_count);
-
-    // General Frame Timing
     Timer frame_time;
-    Timer_init(&frame_time);
+    int frame = 0;
     int t;
     double deltatime  = 0;
     int deltaintegral = 0;
+
+    Timer_init(&fps_count,TIMER_COARSE);
+    Timer_start(&fps_count);
+
+    // General Frame Timing
+    Timer_init(&frame_time,TIMER_MICRO);
+
+    //printf("hiresE %ld confsz %ld\n",Config_video.hires,sizeof(Config_video));
 
     while (cannonball_state != STATE_QUIT)
     {
         Timer_start(&frame_time);
         tick();
+
+
         #ifdef COMPILE_SOUND_CODE
         deltatime += (cannonball_frame_ms * Audio_adjust_speed());
         #else
@@ -228,7 +324,7 @@ static void main_loop()
        // Cap Frame Rate: Sleep Remaining Frame Time
         if (t < deltatime)
         {
-            sleep((Uint32) (deltatime - t));
+            Timer_delay( &frame_time, (Uint32) (deltatime - t) );
         }
         
         deltatime -= deltaintegral;
@@ -246,25 +342,28 @@ static void main_loop()
         }
     }
 
+    Timer_destroy(&frame_time);
+    Timer_destroy(&fps_count);
     quit_func(0);
 }
 
 int main(int argc, char* argv[])
 {
-    // Initialize timer and video systems
-    //if( SDL_Init( SDL_INIT_TIMER | SDL_INIT_VIDEO | SDL_INIT_JOYSTICK) == -1 ) 
-    //{ 
-	//	fprintf(stderr, "SDL Initialization failed: %d\n", SDL_GetError());
-    //    return 1; 
-    //}
+    Boolean loaded = FALSE;
 
-    initTimer();
-    
+#ifndef NOSDL
+    // Initialize timer and video systems
+    if( SDL_Init( SDL_INIT_TIMER | SDL_INIT_VIDEO | SDL_INIT_JOYSTICK) == -1 ) 
+    { 
+		fprintf(stderr, "SDL Initialization failed: %d\n", SDL_GetError());
+        return 1; 
+    }
+#endif
+
     TrackLoader_Create();
 
 
     // Load LayOut File
-    Boolean loaded = FALSE;
     if (argc == 3 && strcmp(argv[1], "-file") == 0)
     {
         if (TrackLoader_set_layout_track(argv[2]))
@@ -285,9 +384,9 @@ int main(int argc, char* argv[])
     {
         // Load XML Config
         Config_load(FILENAME_CONFIG);
-         
+#ifndef NOCAMD
         I_CAMD_InitMusic();
- 
+#endif
         // Load fixed PCM ROM based on config
         if (Config_sound.fix_samples)
             Roms_load_pcm_rom(TRUE);
@@ -298,23 +397,32 @@ int main(int argc, char* argv[])
             fprintf(stderr, "Unable to load widescreen tilemaps.\n");
         }
 
-        
+#ifndef NOSDL
+        //Set the window caption 
+        SDL_WM_SetCaption( "Cannonball", NULL ); 
+#endif
+
         Video_Create();
 
         // Initialize SDL Video
+	//printf("hiresA %ld\n",Config_video.hires);
         if (!Video_init(&Config_video))
             quit_func(1);
+	//printf("hiresB %ld confsz %ld\n",Config_video.hires,sizeof(Config_video));
 
 #ifdef COMPILE_SOUND_CODE
         Audio_init();
 #endif
         cannonball_state = Config_menu.enabled ? STATE_INIT_MENU : STATE_INIT_GAME;
 
+	//printf("hiresC %ld confsz %ld state %ld\n",Config_video.hires,sizeof(Config_video),(unsigned long)cannonball_state);
+
         // Initalize controls
         Input_init(Config_controls.pad_id,
                    Config_controls.keyconfig, Config_controls.padconfig, 
                    Config_controls.analog,    Config_controls.axis, Config_controls.asettings);
 
+	//printf("hiresD %ld confsz %ld state %ld\n",Config_video.hires,sizeof(Config_video),(unsigned long)cannonball_state);
 
         main_loop();  // Loop until we quit the app
     }

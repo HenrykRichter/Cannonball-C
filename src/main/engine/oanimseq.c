@@ -92,6 +92,7 @@ void OAnimSeq_init_oanimsprite(oanimsprite* animsprite, oentry* s)
 
 void OAnimSeq_init(oentry* jump_table)
 {
+    oentry* sprite_ferrari,* sprite_pass1,* sprite_pass2;
     // --------------------------------------------------------------------------------------------
     // Flag Animation Setup
     // --------------------------------------------------------------------------------------------
@@ -110,20 +111,20 @@ void OAnimSeq_init(oentry* jump_table)
     // --------------------------------------------------------------------------------------------
     // Ferrari & Passenger Animation Setup For Intro
     // --------------------------------------------------------------------------------------------
-    oentry* sprite_ferrari = &jump_table[SPRITE_FERRARI];
+    sprite_ferrari = &jump_table[SPRITE_FERRARI];
     OAnimSeq_init_oanimsprite(&OAnimSeq_anim_ferrari, sprite_ferrari);
     OAnimSeq_anim_ferrari.anim_addr_curr = Outrun_adr.anim_ferrari_curr;
     OAnimSeq_anim_ferrari.anim_addr_next = Outrun_adr.anim_ferrari_next;
     sprite_ferrari->control |= SPRITES_ENABLE;
     sprite_ferrari->draw_props = DRAW_BOTTOM;
 
-    oentry* sprite_pass1 = &jump_table[SPRITE_PASS1];
+    sprite_pass1 = &jump_table[SPRITE_PASS1];
     OAnimSeq_init_oanimsprite(&OAnimSeq_anim_pass1, sprite_pass1);
     OAnimSeq_anim_pass1.anim_addr_curr = Outrun_adr.anim_pass1_curr;
     OAnimSeq_anim_pass1.anim_addr_next = Outrun_adr.anim_pass1_next;
     sprite_pass1->draw_props = DRAW_BOTTOM;
 
-    oentry* sprite_pass2 = &jump_table[SPRITE_PASS2];
+    sprite_pass2 = &jump_table[SPRITE_PASS2];
     OAnimSeq_init_oanimsprite(&OAnimSeq_anim_pass2, sprite_pass2);
     OAnimSeq_anim_pass2.anim_addr_curr = Outrun_adr.anim_pass2_curr;
     OAnimSeq_anim_pass2.anim_addr_next = Outrun_adr.anim_pass2_next;
@@ -166,10 +167,11 @@ void OAnimSeq_flag_seq()
         // Init Flag Sequence
         if (Outrun_game_state < GS_INGAME && OAnimSeq_anim_flag.anim_state != Outrun_game_state)
         {
+	    uint32_t index;
             OAnimSeq_anim_flag.anim_state = Outrun_game_state;
 
             // Index of animation sequences
-            uint32_t index = Outrun_adr.anim_seq_flag + ((Outrun_game_state - 9) << 3);
+            index = Outrun_adr.anim_seq_flag + ((Outrun_game_state - 9) << 3);
 
             OAnimSeq_anim_flag.anim_addr_curr = RomLoader_read32IncP(Roms_rom0p, &index);
             OAnimSeq_anim_flag.anim_addr_next = RomLoader_read32IncP(Roms_rom0p, &index);
@@ -181,15 +183,18 @@ void OAnimSeq_flag_seq()
         // Wave Flag 
         if (Outrun_game_state <= GS_INGAME)
         {
+	    uint32_t addr,value;
+	    uint16_t z16;
+	    int16_t sprite_x,final_x,sprite_y,final_y;
             uint32_t index = OAnimSeq_anim_flag.anim_addr_curr + (OAnimSeq_anim_flag.anim_frame << 3);
 
             OAnimSeq_anim_flag.sprite->addr    = RomLoader_read32(Roms_rom0p, index) & 0xFFFFF;
             OAnimSeq_anim_flag.sprite->pal_src = RomLoader_read8(Roms_rom0p, index);
 
-            uint32_t addr = SPRITE_ZOOM_LOOKUP + (((OAnimSeq_anim_flag.sprite->z >> 16) << 2) | OSprites_sprite_scroll_speed);
-            uint32_t value = RomLoader_read32(Roms_rom0p, addr);
+            addr = SPRITE_ZOOM_LOOKUP + (((OAnimSeq_anim_flag.sprite->z >> 16) << 2) | OSprites_sprite_scroll_speed);
+            value = RomLoader_read32(Roms_rom0p, addr);
             OAnimSeq_anim_flag.sprite->z += value;
-            uint16_t z16 = OAnimSeq_anim_flag.sprite->z >> 16;
+            z16 = OAnimSeq_anim_flag.sprite->z >> 16;
         
             if (z16 >= 0x200)
             {
@@ -200,9 +205,9 @@ void OAnimSeq_flag_seq()
             OAnimSeq_anim_flag.sprite->zoom     = z16 >> 2;
 
             // Set X Position
-            int16_t sprite_x = (int8_t) RomLoader_read8(Roms_rom0p, 4 + index);
+            sprite_x = (int8_t) RomLoader_read8(Roms_rom0p, 4 + index);
             sprite_x -= ORoad_road0_h[z16];
-            int32_t final_x = (sprite_x * z16) >> 9;
+            final_x = (sprite_x * z16) >> 9;
 
             if (RomLoader_read8(Roms_rom0p, 1 + index) & BIT_7)
                 final_x = -final_x;
@@ -210,8 +215,8 @@ void OAnimSeq_flag_seq()
             OAnimSeq_anim_flag.sprite->x = final_x;
 
             // Set Y Position
-            int16_t sprite_y      = (int8_t) RomLoader_read8(Roms_rom0p, 5 + index);
-            int16_t final_y       = (sprite_y * z16) >> 9;
+            sprite_y      = (int8_t) RomLoader_read8(Roms_rom0p, 5 + index);
+            final_y       = (sprite_y * z16) >> 9;
             OAnimSeq_anim_flag.sprite->y   = ORoad_get_road_y(z16) - final_y;
 
             // Set H-Flip
@@ -287,10 +292,14 @@ void OAnimSeq_anim_seq_intro(oanimsprite* anim)
 
     if (Outrun_tick_frame)
     {
+        uint32_t index;
+	int16_t sprite_x;
+	int32_t final_x;
+
         if (anim->anim_frame >= 1)
             OFerrari_car_state = CAR_ANIM_SEQ;
 
-        uint32_t index              = anim->anim_addr_curr + (anim->anim_frame << 3);
+        index              = anim->anim_addr_curr + (anim->anim_frame << 3);
 
         anim->sprite->addr          = RomLoader_read32(Roms_rom0p, index) & 0xFFFFF;
         anim->sprite->pal_src       = RomLoader_read8(Roms_rom0p, index);
@@ -299,8 +308,8 @@ void OAnimSeq_anim_seq_intro(oanimsprite* anim)
         anim->sprite->priority      = 0x1FE - ((RomLoader_read16(Roms_rom0p, index) & 0x70) >> 4);
 
         // Set X
-        int16_t sprite_x = (int8_t) RomLoader_read8(Roms_rom0p, 4 + index);
-        int32_t final_x = (sprite_x * anim->sprite->priority) >> 9;
+        sprite_x = (int8_t) RomLoader_read8(Roms_rom0p, 4 + index);
+        final_x = (sprite_x * anim->sprite->priority) >> 9;
         if (RomLoader_read8(Roms_rom0p, 1 + index) & BIT_7)
             final_x = -final_x;
         anim->sprite->x = final_x;
@@ -573,6 +582,7 @@ void OAnimSeq_anim_seq_outro(oanimsprite* anim)
     if (Outrun_tick_frame)
     {    
         // Process Animation Data
+	int16_t sprite_y,final_y;
         uint32_t index = anim->anim_addr_curr + (anim->anim_frame << 3);
 
         anim->sprite->addr          = RomLoader_read32(Roms_rom0p, index) & 0xFFFFF;
@@ -588,8 +598,8 @@ void OAnimSeq_anim_seq_outro(oanimsprite* anim)
         // set_sprite_xy: (similar to flag code again)
 
         // Set Y Position
-        int16_t sprite_y = (int8_t) RomLoader_read8(Roms_rom0p, 5 + index);
-        int16_t final_y  = (sprite_y * anim->sprite->priority) >> 9;
+        sprite_y = (int8_t) RomLoader_read8(Roms_rom0p, 5 + index);
+        final_y  = (sprite_y * anim->sprite->priority) >> 9;
         anim->sprite->y  = ORoad_get_road_y(anim->sprite->priority) - final_y;
 
         // Set H-Flip
@@ -635,6 +645,7 @@ void OAnimSeq_anim_seq_shadow(oanimsprite* parent, oanimsprite* anim)
     if (Outrun_tick_frame)
     {  
         uint8_t zoom_shift = 3;
+	uint16_t priority;
 
         // Car Shadow
         if (anim->sprite->id == 3)
@@ -645,7 +656,7 @@ void OAnimSeq_anim_seq_shadow(oanimsprite* parent, oanimsprite* anim)
         }
         // 5C88 set_sprite_xy:
         anim->sprite->x    = parent->sprite->x;
-        uint16_t priority  = parent->sprite->road_priority >> zoom_shift;
+        priority  = parent->sprite->road_priority >> zoom_shift;
         anim->sprite->zoom = priority - (priority >> 2);
         anim->sprite->y    = ORoad_get_road_y(parent->sprite->road_priority);
     
@@ -669,7 +680,10 @@ Boolean OAnimSeq_read_anim_data(oanimsprite* anim)
     int16_t end_pos =   RomLoader_read16(Roms_rom0p, 2 + addr); // d3
 
     int16_t pos = seq_pos; // d1
-    
+    const Boolean DO_NOTHING = FALSE;
+    const Boolean PROCESS    = TRUE;
+
+   
     // Global Sequence Position: Advance to next position
     // Not particularly clean embedding this here obviously!
     if (Outrun_tick_frame && anim->anim_props & 0xFF00)
@@ -695,9 +709,6 @@ Boolean OAnimSeq_read_anim_data(oanimsprite* anim)
     // --------------------------------------------------------------------------------------------
     // Process Animation Sequence
     // --------------------------------------------------------------------------------------------
-
-    const Boolean DO_NOTHING = FALSE;
-    const Boolean PROCESS    = TRUE;
 
     // check_seq_pos:
     // Sequence: Start Position

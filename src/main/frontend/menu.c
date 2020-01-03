@@ -20,6 +20,14 @@
 
 #include "frontend/ttrial.h"
 
+#ifdef _AMIGA_
+#ifdef NOCAMD
+#include "amiga/Sound.h"
+extern void *mod;
+#endif
+#endif
+#include <stdio.h>
+
 // Menu state
 uint8_t Menu_state;
 
@@ -84,10 +92,14 @@ uint16_t horizon_pos;
 
 // Video Menu
 #define ENTRY_FPS         "FRAME RATE "
+#if !defined (_AMIGA_)
 #define ENTRY_FULLSCREEN  "FULL SCREEN "
+#endif
 #define ENTRY_WIDESCREEN  "WIDESCREEN "
 #define ENTRY_HIRES       "HIRES "
+#if !defined (_AMIGA_)
 #define ENTRY_SCALE       "WINDOW SCALE "
+#endif
 #define ENTRY_SCANLINES   "SCANLINES "
 
 // Sound Menu
@@ -138,13 +150,22 @@ String menu_gamemodes[] = { ENTRY_ENHANCED, ENTRY_ORIGINAL, ENTRY_CONT, ENTRY_TI
 String menu_cont[] = { ENTRY_START_CONT, ENTRY_TRAFFIC, ENTRY_BACK };
 String menu_timetrial[] = { ENTRY_START, ENTRY_LAPS, ENTRY_TRAFFIC, ENTRY_BACK };
 String menu_about[] = { "CANNONBALL 0.3 © CHRIS WHITE 2014", "REASSEMBLER.BLOGSPOT.COM", " ", "CANNONBALL IS FREE AND MAY NOT BE SOLD." };
-String menu_video[] = { ENTRY_FPS, ENTRY_FULLSCREEN, ENTRY_WIDESCREEN, ENTRY_HIRES, ENTRY_SCALE, ENTRY_SCANLINES, ENTRY_BACK, };
 #if !defined (_AMIGA_)
+String menu_video[] = { ENTRY_FPS, ENTRY_FULLSCREEN, ENTRY_WIDESCREEN, ENTRY_HIRES, ENTRY_SCALE, ENTRY_SCANLINES, ENTRY_BACK, };
 String menu_sound[] = { ENTRY_MUTE, ENTRY_ADVERTISE, ENTRY_PREVIEWSND, ENTRY_FIXSAMPLES, ENTRY_MUSICTEST, ENTRY_CAMDMIDI, ENTRY_BACK };
 #else
+String menu_video[] = { ENTRY_FPS, ENTRY_WIDESCREEN, ENTRY_HIRES, ENTRY_SCANLINES, ENTRY_BACK, };
+#ifndef NOCAMD
 String menu_sound[] = { ENTRY_CAMDMIDI, ENTRY_MUSICTEST, ENTRY_BACK };
+#else
+String menu_sound[] = { ENTRY_MODMUSIC, ENTRY_MUSICTEST, ENTRY_BACK };
 #endif
+#endif
+#if defined (_AMIGA_)
+String menu_controls[] = { ENTRY_GEAR, ENTRY_REDEFKEY, ENTRY_REDEFJOY, ENTRY_DSTEER, ENTRY_DPEDAL, ENTRY_BACK };
+#else
 String menu_controls[] = { ENTRY_GEAR, ENTRY_ANALOG, ENTRY_REDEFKEY, ENTRY_REDEFJOY, ENTRY_DSTEER, ENTRY_DPEDAL, ENTRY_BACK };
+#endif
 String menu_engine[] = { ENTRY_TRACKS, ENTRY_TIME, ENTRY_TRAFFIC, ENTRY_OBJECTS, ENTRY_PROTOTYPE, ENTRY_ATTRACT, ENTRY_BACK };
 String menu_musictest[] = { ENTRY_MUSIC1, ENTRY_MUSIC2, ENTRY_MUSIC3, ENTRY_MUSIC4, ENTRY_BACK };
 String text_redefine[] = { "PRESS UP", "PRESS DOWN", "PRESS LEFT", "PRESS RIGHT", "PRESS ACCELERATE", "PRESS BRAKE", "PRESS GEAR", "PRESS GEAR HIGH", "PRESS START", "PRESS COIN IN", "PRESS MENU", "PRESS VIEW CHANGE" };
@@ -157,10 +178,11 @@ uint16_t menu_gamemodes_itemcount = 5;
 uint16_t menu_cont_itemcount = 3;
 uint16_t menu_timetrial_itemcount = 4;
 uint16_t menu_about_itemcount = 4;
-uint16_t menu_video_itemcount = 7;
 #if !defined (_AMIGA_)
+uint16_t menu_video_itemcount = 7;
 uint16_t menu_sound_itemcount = 7;
 #else
+uint16_t menu_video_itemcount = 5;
 uint16_t menu_sound_itemcount = 3;
 #endif
 uint16_t menu_controls_itemcount = 7;
@@ -212,6 +234,7 @@ void Menu_init()
         Outrun_ttrial.new_high_score = FALSE;
         TTrial_update_best_time();
     }
+//    Printf("Menu_init hiresA %ld\n",Config_video.hires);
 
     Outrun_select_course(FALSE, Config_engine.prototype != 0);
     Video_enabled = TRUE;
@@ -252,6 +275,8 @@ void Menu_init()
 #ifdef COMPILE_SOUND_CODE
     Audio_clear_wav();
 #endif
+
+    //Printf("Menu_init hires %ld\n",Config_video.hires);
 
     frame = 0;
     message_counter = 0;
@@ -326,12 +351,13 @@ void Menu_tick_ui()
     else
     {
         uint32_t scroll_speed = (Config_fps == 60) ? Config_menu.road_scroll_speed : Config_menu.road_scroll_speed << 1;
+	uint32_t result;
 
         if (OInitEngine_car_increment < scroll_speed << 16)
             OInitEngine_car_increment += (1 << 14);
         if (OInitEngine_car_increment > scroll_speed << 16)
             OInitEngine_car_increment = scroll_speed << 16;
-        uint32_t result = 0x12F * (OInitEngine_car_increment >> 16);
+        result = 0x12F * (OInitEngine_car_increment >> 16);
         ORoad_road_pos_change = result;
         ORoad_road_pos += result;
         if (ORoad_road_pos >> 16 > ROAD_END) // loop to beginning of track data
@@ -535,13 +561,16 @@ void Menu_tick_menu()
         }
         else if (menu_selected == menu_video)
         {
+#if !defined (_AMIGA_)            
             if (SELECTED(ENTRY_FULLSCREEN))
             {
                 if (++Config_video.mode > VIDEO_MODE_STRETCH)
                     Config_video.mode = VIDEO_MODE_WINDOW;
                 Menu_restart_video();
             }
-            else if (SELECTED(ENTRY_WIDESCREEN))
+            else 
+#endif
+	    if (SELECTED(ENTRY_WIDESCREEN))
             {
                 Config_video.widescreen = !Config_video.widescreen;
                 Menu_restart_video();
@@ -549,6 +578,7 @@ void Menu_tick_menu()
             else if (SELECTED(ENTRY_HIRES))
             {
                 Config_video.hires = !Config_video.hires;
+#if !defined (_AMIGA_)
                 if (Config_video.hires)
                 {
                     if (Config_video.scale > 1)
@@ -558,22 +588,33 @@ void Menu_tick_menu()
                 {
                     Config_video.scale <<= 1;
                 }
-
+#else
+		Config_video.scale = 1;
+#endif
                 Menu_restart_video();
                 HWSprites_set_x_clip(FALSE);
             }
+#if !defined (_AMIGA_)            
             else if (SELECTED(ENTRY_SCALE))
             {
                 if (++Config_video.scale > (Config_video.hires ? 2 : 4))
                     Config_video.scale = 1;
                 Menu_restart_video();
             }
+#endif
             else if (SELECTED(ENTRY_SCANLINES))
             {
+#if !defined (_AMIGA_)
                 Config_video.scanlines += 10;
                 if (Config_video.scanlines > 100)
                     Config_video.scanlines = 0;
                 Menu_restart_video();
+#else
+		if( Config_video.scanlines )
+			Config_video.scanlines = 0;
+		else	Config_video.scanlines = 50;
+		Menu_restart_video();
+#endif
             }
             else if (SELECTED(ENTRY_FPS))
             {
@@ -618,12 +659,22 @@ void Menu_tick_menu()
             }
             else if (SELECTED(ENTRY_MUSICTEST))
                 Menu_set_menu(menu_musictest, menu_musictest_itemcount);
-#else                
+#else               
+#ifndef NOCAMD
             if (SELECTED(ENTRY_CAMDMIDI))
             {
                 Config_sound.amiga_midi = !Config_sound.amiga_midi; 
-                
+		if( (Config_sound.amiga_midi) && (!Config_sound.enabled) )
+	                Config_sound.enabled = !Config_sound.enabled;
             }
+#else
+	    if (SELECTED(ENTRY_MODMUSIC))
+	    {
+		Config_sound.amiga_mods = !Config_sound.amiga_mods;
+		if( (Config_sound.amiga_mods) && (!Config_sound.enabled) )
+	                Config_sound.enabled = !Config_sound.enabled;
+	    }
+#endif
             else if (SELECTED(ENTRY_MUSICTEST))
                 Menu_set_menu(menu_musictest, menu_musictest_itemcount);            
 #endif            
@@ -637,13 +688,15 @@ void Menu_tick_menu()
                 if (++Config_controls.gear > CONTROLS_GEAR_AUTO)
                     Config_controls.gear = CONTROLS_GEAR_BUTTON;
             }
+#if !defined (_AMIGA_)
             else if (SELECTED(ENTRY_ANALOG))
             {
                 if (++Config_controls.analog == 3)
                     Config_controls.analog = 0;
                 Input_analog = Config_controls.analog;
             }
-            else if (SELECTED(ENTRY_REDEFKEY))
+#endif
+	    else if (SELECTED(ENTRY_REDEFKEY))
             {
                 Menu_display_message("PRESS MENU TO END AT ANY STAGE");
                 Menu_state = MENU_STATE_REDEFINE_KEYS;
@@ -719,41 +772,81 @@ void Menu_tick_menu()
         {
             if (SELECTED(ENTRY_MUSIC1))
             {
+#ifndef NOCAMD
                 if (Config_sound.amiga_midi)   
                 { 
                     I_CAMD_StopSong();                
                     I_CAMD_PlaySong("data/Magical.mid");    
                 }
+#else
+		if(Config_sound.amiga_mods)
+		{
+			if( mod )
+				SND_EjectModule(mod);
+			mod = SND_LoadModule("data/outrun_1.mod");
+                	SND_SetFXChannel(2);
+                	SND_PlayModule(mod);
+		}
+#endif
                 else
                     OSoundInt_queue_sound(SOUND_MUSIC_MAGICAL);
             }
             else if (SELECTED(ENTRY_MUSIC2))
             {
+#ifndef NOCAMD
                 if (Config_sound.amiga_midi)
                 {
                     I_CAMD_StopSong();
                     I_CAMD_PlaySong("data/Pass-Brz.mid");                    
                 }
+#else
+		if(Config_sound.amiga_mods)
+		{
+			if( mod )
+				SND_EjectModule(mod);
+			mod = SND_LoadModule("data/outrun_2.mod");
+                	SND_SetFXChannel(2);
+                	SND_PlayModule(mod);
+		}
+#endif
                 else            
                     OSoundInt_queue_sound(SOUND_MUSIC_BREEZE);
             }
             else if (SELECTED(ENTRY_MUSIC3))
             {
+#ifndef NOCAMD
                 if (Config_sound.amiga_midi)
                 {
                     I_CAMD_StopSong();                
                     I_CAMD_PlaySong("data/Splash.mid");                    
                 }
+#else
+		if(Config_sound.amiga_mods)
+		{
+			if( mod )
+				SND_EjectModule(mod);
+			mod = SND_LoadModule("data/outrun_2.mod");
+                	SND_SetFXChannel(2);
+                	SND_PlayModule(mod);
+		}
+#endif
                 else            
                     OSoundInt_queue_sound(SOUND_MUSIC_SPLASH);
             }
             else if (SELECTED(ENTRY_MUSIC4))
             {
+#ifndef NOCAMD
                 if (Config_sound.amiga_midi)
                 {
                     I_CAMD_StopSong();                
                     I_CAMD_PlaySong("data/Lastwave.mid");                    
                 }
+#else
+		if(Config_sound.amiga_mods)
+		{
+
+		}
+#endif
                 else
                     OSoundInt_queue_sound(SOUND_MUSIC_LASTWAVE);
             }
@@ -774,11 +867,12 @@ void Menu_tick_menu()
 // Set Current Menu
 void Menu_set_menu(String* menu, uint16_t menu_items_count)
 {
+    int loop;
+
     menu_seleted_itemcount = menu_items_count;
     menu_selected = menu;
     cursor = 0;
 
-    int loop;
     for (loop = 0; loop < menu_items_count; loop++)
     {
         strcpy(menu_selected_todraw[loop], menu[loop]);
@@ -799,6 +893,8 @@ void Menu_refresh_menu()
     const char* lapsStrings[5] = { "1", "2", "3", "4", "5" };
     const char* speedStrings[9] = { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
 
+//    Printf("refreshmenu hires %ld sizeconf %ld\n",(unsigned long)Config_video.hires,sizeof(Config_video));
+ 
     for (cursor = 0; cursor < (int) menu_seleted_itemcount; cursor++)
     {
         // Get option that was selected
@@ -818,6 +914,7 @@ void Menu_refresh_menu()
         }
         else if (menu_selected == menu_video)
         {
+#if !defined (_AMIGA_)
             if (SELECTED(ENTRY_FULLSCREEN))
             {
                 if (Config_video.mode == VIDEO_MODE_WINDOW)       s = "OFF";
@@ -825,12 +922,16 @@ void Menu_refresh_menu()
                 else if (Config_video.mode == VIDEO_MODE_STRETCH) s = "STRETCH";
                 Menu_set_menu_text(ENTRY_FULLSCREEN, s);
             }
-            else if (SELECTED(ENTRY_WIDESCREEN))
+            else 
+#endif
+	    if (SELECTED(ENTRY_WIDESCREEN))
                 Menu_set_menu_text(ENTRY_WIDESCREEN, Config_video.widescreen ? "ON" : "OFF");
+#if !defined (_AMIGA_)
             else if (SELECTED(ENTRY_SCALE))
                 Menu_set_menu_text(ENTRY_SCALE, videoScaleStrings[Config_video.scale - 1]);
+#endif
             else if (SELECTED(ENTRY_HIRES))
-                Menu_set_menu_text(ENTRY_HIRES, Config_video.hires ? "ON" : "OFF");
+                Menu_set_menu_text(ENTRY_HIRES, (Config_video.hires) ? "ON" : "OFF");
             else if (SELECTED(ENTRY_FPS))
             {
                 if (Config_video.fps == 0)      s = "30 FPS";
@@ -839,7 +940,11 @@ void Menu_refresh_menu()
                 Menu_set_menu_text(ENTRY_FPS, s);
             }
             else if (SELECTED(ENTRY_SCANLINES))
+#if !defined (_AMIGA_)
                 Menu_set_menu_text(ENTRY_SCANLINES, scanLineStrings[Config_video.scanlines / 10]);
+#else
+		Menu_set_menu_text(ENTRY_SCANLINES, Config_video.scanlines ? "YES" : "NO" );
+#endif
         }
         else if (menu_selected == menu_sound)
         {
@@ -854,6 +959,8 @@ void Menu_refresh_menu()
             else if (SELECTED(ENTRY_FIXSAMPLES))
                 Menu_set_menu_text(ENTRY_FIXSAMPLES, Config_sound.fix_samples ? "ON" : "OFF");
 #else
+	    if (SELECTED(ENTRY_MODMUSIC))
+	    	Menu_set_menu_text(ENTRY_MODMUSIC, Config_sound.amiga_mods ? "ON" : "OFF");
             if (SELECTED(ENTRY_CAMDMIDI))
                 Menu_set_menu_text(ENTRY_CAMDMIDI, Config_sound.amiga_midi ? "ON" : "OFF");
 
@@ -1038,8 +1145,20 @@ void Menu_restart_video()
 void Menu_start_game(int mode, int settings)
 {
     // Enhanced Settings
+    //printf("menu start game settings %d mode %d\n",settings,mode);
     if (settings == 1)
     {
+//#ifdef _AMIGA_
+#if 0
+	Config_video.scale = 1;
+        Config_set_fps(Config_video.fps = 2);
+        Config_video.widescreen     = 1;
+        Config_video.hires          = 0;
+        Config_engine.level_objects = 0;
+        Config_engine.new_attract   = 0;
+        Config_engine.fix_bugs      = 1;
+        Config_sound.preview        = 1;
+#else
         if (!Config_video.hires)
         {
             if (Config_video.scale > 1)
@@ -1059,7 +1178,7 @@ void Menu_start_game(int mode, int settings)
         Config_engine.new_attract   = 1;
         Config_engine.fix_bugs      = 1;
         Config_sound.preview        = 1;
-
+#endif
         Menu_restart_video();
     }
     // Original Settings

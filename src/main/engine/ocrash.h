@@ -20,8 +20,8 @@
     Copyright Chris White.
     See license.txt for more details.
 ***************************************************************************/
-
-#pragma once
+#ifndef _INC_SRC_MAIN_ENGINE_OCRASH_H
+#define _INC_SRC_MAIN_ENGINE_OCRASH_H
 
 #include "outrun.h"
 
@@ -107,4 +107,4 @@ void OCrash_tick();
 
 
 
-
+#endif

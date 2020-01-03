@@ -67,8 +67,11 @@ const static uint8_t PEDAL_MAX = 0x90;
 // Brake Input
 int16_t input_brake;
 
+const int blahfasel[1024];
+
 void OInputs_digital_steering();
 void OInputs_digital_pedals();
+int OInputs_dummy(Packet *packet);
 
 void OInputs_init()
 {
@@ -94,8 +97,10 @@ void OInputs_init()
     coin2       = FALSE;
 }
 
+
 void OInputs_tick(Packet* packet)
 {
+#ifdef CANNONBOARD
 // CannonBoard Input
     if (packet != NULL)
     {
@@ -115,9 +120,9 @@ void OInputs_tick(Packet* packet)
         // Start
         Input_keys[INPUT_START] = (packet->di1 & 0x08) != 0;
     }
-
     // Standard PC Keyboard/Joypad/Wheel Input
     else
+#endif
     {
         // Digital Controls: Simulate Analog
         if (!Input_analog || !Input_gamepad)
@@ -252,6 +257,41 @@ void OInputs_do_gear()
     }
 }
 
+void OInputs_do_gear2()
+{
+    // ------------------------------------------------------------------------
+    // GEAR SHIFT
+    // ------------------------------------------------------------------------
+
+    // Automatic Gears: Don't do anything
+    if (Config_controls.gear == CONTROLS_GEAR_AUTO)
+        return;
+
+    else
+    {
+        // Manual: Cabinet Shifter
+        if (Config_controls.gear == CONTROLS_GEAR_PRESS)
+            OInputs_gear = !Input_is_pressed(INPUT_GEAR1);
+
+        // Manual: Two Separate Buttons for gears
+        else if (Config_controls.gear == CONTROLS_GEAR_SEPARATE)
+        {
+            if (Input_has_pressed(INPUT_GEAR1))
+                OInputs_gear = FALSE;
+            else if (Input_has_pressed(INPUT_GEAR2))
+                OInputs_gear = TRUE;
+        }
+
+        // Manual: Keyboard/Digital Button
+        else
+        {
+            if (Input_has_pressed(INPUT_GEAR1))
+                OInputs_gear = !OInputs_gear;
+        }
+    }
+}
+
+
 // Adjust Analogue Inputs
 //
 // Read, Adjust & Write Analogue Inputs
@@ -267,8 +307,8 @@ void OInputs_adjust_inputs()
 
     if (OInputs_crash_input)
     {
-        OInputs_crash_input--;
         int16_t d0 = ((OInputs_input_steering - 0x80) * 0x100) / 0x70;
+        OInputs_crash_input--;
         if (d0 > 0x7F) d0 = 0x7F;
         else if (d0 < -0x7F) d0 = -0x7F;
         OInputs_steering_adjust = OCrash_crash_counter ? 0 : d0;
@@ -295,17 +335,21 @@ void OInputs_adjust_inputs()
         }
     }
 
+    {
     // Cap & Adjust Acceleration Value
     int16_t acc = OInputs_input_acc;
     if (acc > PEDAL_MAX) acc = PEDAL_MAX;
     else if (acc < PEDAL_MIN) acc = PEDAL_MIN;
     OInputs_acc_adjust = ((acc - 0x30) * 0x100) / 0x61;
+    }
 
+    {
     // Cap & Adjust Brake Value
     int16_t brake = input_brake;
     if (brake > PEDAL_MAX) brake = PEDAL_MAX;
     else if (brake < PEDAL_MIN) brake = PEDAL_MIN;
     OInputs_brake_adjust = ((brake - 0x30) * 0x100) / 0x61;
+    }
 }
 
 // Simplified version of do credits routine. 

@@ -4,8 +4,8 @@
     Copyright Chris White.
     See license.txt for more details.
 ***************************************************************************/
-
-#pragma once
+#ifndef _INC_SRC_MAIN_XMLUTILS_H
+#define _INC_SRC_MAIN_XMLUTILS_H
 
 #include "stdint.h"
 #include "thirdparty/sxmlc/sxmlc.h"
@@ -24,3 +24,4 @@ XMLNode* AddNodeString(XMLDoc* doc, XMLNode* parent, const char* nodeName, const
 XMLNode* AddNodeInt(XMLDoc* doc, XMLNode* parent, const char* nodeName, int value);
 XMLNode* AddNodeAttributeString(XMLDoc* doc, XMLNode* parent, const char* nodeName, const char* attributeName, const char* text);
 XMLNode* AddNodeAttributeInt(XMLDoc* doc, XMLNode* parent, const char* nodeName, const char* attributeName, int value);
+#endif

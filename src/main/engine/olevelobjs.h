@@ -13,8 +13,8 @@
     Copyright Chris White.
     See license.txt for more details.
 ***************************************************************************/
-
-#pragma once
+#ifndef _INC_SRC_MAIN_ENGINE_OLEVELOBJS_H
+#define _INC_SRC_MAIN_ENGINE_OLEVELOBJS_H
 
 #include "outrun.h"
 
@@ -46,3 +46,4 @@ void OLevelObjs_init_hiscore_sprites();
 void OLevelObjs_setup_sprites(uint32_t);
 void OLevelObjs_do_sprite_routine();
 void OLevelObjs_hide_sprite(oentry*);
+#endif

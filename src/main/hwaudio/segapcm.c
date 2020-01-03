@@ -109,7 +109,8 @@ double SegaPCM_downsample;
 
 void SegaPCM_Create(uint32_t clock, RomLoader* rom, uint8_t* ram, int32_t bank)
 {
-    int32_t i;
+    int32_t i,mask,rom_mask;
+    
     SegaPCM_volume     = 1.0;
     SegaPCM_initalized = FALSE;
 
@@ -119,11 +120,11 @@ void SegaPCM_Create(uint32_t clock, RomLoader* rom, uint8_t* ram, int32_t bank)
     SegaPCM_bankshift = bank & 0xFF;
     SegaPCM_rgnmask = SegaPCM_max_addr - 1;
 
-    int32_t mask = bank >> 16;
+    mask = bank >> 16;
     if (mask == 0)
         mask = SEGAPCM_BANK_MASK7 >> 16;
 
-    int32_t rom_mask;
+    rom_mask;
     for (rom_mask = 1; rom_mask < SegaPCM_max_addr; rom_mask *= 2);
     rom_mask--;
 
@@ -176,6 +177,7 @@ void SegaPCM_stream_update()
             for (i = 0; i < SegaPCM_frame_size; i++) 
             {
                 int8_t v = 0;
+		double increment;
 
                 // handle looping if we've hit the end
                 if ((addr >> 16) == end) 
@@ -200,7 +202,7 @@ void SegaPCM_stream_update()
 
                 // Advance.
                 // Cannonball Change: Output at a fixed 44,100Hz. 
-                double increment = ((double)regs[7]) * SegaPCM_downsample;
+                increment = ((double)regs[7]) * SegaPCM_downsample;
                 addr = (addr + (int) increment) & 0xffffff;
             }
 

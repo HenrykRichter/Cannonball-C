@@ -55,7 +55,7 @@ void Config_init()
     Config_video.widescreen = 0;
     Config_video.hires      = 0;
     Config_video.filtering  = 0;
-    Config_video.detailLevel = 1;
+    Config_video.detailLevel =2; 
 
     Config_set_fps(Config_video.fps);
 
@@ -64,7 +64,7 @@ void Config_init()
     // ------------------------------------------------------------------------
     Config_sound.enabled     = 0;
     Config_sound.advertise   = 0;
-    Config_sound.preview     = 0;
+    Config_sound.preview     = 1;
     Config_sound.fix_samples = 0;
  
     Config_controls.gear          = 0;
@@ -154,14 +154,31 @@ void Config_init()
 void Config_load(const char* filename)
 {
     int i;
-    Config_init();
     XMLDoc doc;
+
+    Config_init();
+
+    return; /* FIXME: could not get XML stuff to work (crashes) */
+
     if (!XMLDoc_init(&doc) || !XMLDoc_parse_file_DOM(filename, &doc))
     {
         fprintf(stderr, "Error: Couldn't load %s\n", filename);
         return;
     }
 
+#ifdef _AMIGA_
+    fprintf(stderr,"after config read\n");
+#if 1 
+    Config_video.fps        = GetXMLDocValueInt(&doc, "/video/fps",                0); // Default is 60 fps
+    Config_video.widescreen = GetXMLDocValueInt(&doc, "/video/widescreen",         0); // Enable Widescreen Mode
+    Config_video.hires      = GetXMLDocValueInt(&doc, "/video/hires",              0); // Hi-Resolution Mode
+    Config_video.scanlines  = GetXMLDocValueInt(&doc, "/video/scanlines",          0); // Scanlines
+
+    Config_set_fps(Config_video.fps);
+    Config_video.fps_count  = GetXMLDocValueInt(&doc, "/video/fps_counter",        0); // FPS Counter
+#endif
+
+#else
     // ------------------------------------------------------------------------
     // Menu Settings
     // ------------------------------------------------------------------------
@@ -197,19 +214,20 @@ void Config_load(const char* filename)
     for (i = 0; i < 4; i++)
     {
         char basexmltag[64] = "/sound/custom_music/track";
+        char childtag[64];
+        char defaultTitle[128] = "TRACK ";
+        char defaultFilename[128] = "track";
+
         strcat(basexmltag, Utils_int_to_string(i+1));
         strcat(basexmltag, "/");
 
         Config_sound.custom_music[i].enabled  = GetXmlDocAttributeInt(&doc, basexmltag, "enabled", 0);
 
-        char childtag[64];
         strcpy(childtag, basexmltag); strcat(childtag, "title");
-        char defaultTitle[128] = "TRACK ";
         strcat(defaultTitle, Utils_int_to_string(i + 1));
         strcpy(Config_sound.custom_music[i].title, GetXMLDocValueString(&doc, childtag, defaultTitle));
             
         strcpy(childtag, basexmltag); strcat(childtag, "filename");
-        char defaultFilename[128] = "track";
         strcat(defaultFilename, Utils_int_to_string(i + 1));
 
         strcpy(Config_sound.custom_music[i].filename, GetXMLDocValueString(&doc, childtag, defaultFilename));
@@ -298,38 +316,38 @@ void Config_load(const char* filename)
     Config_ttrial.laps    = GetXMLDocValueInt(&doc, "/time_trial/laps",    5);
     Config_ttrial.traffic = GetXMLDocValueInt(&doc, "/time_trial/traffic", 3);
     Config_cont_traffic   = GetXMLDocValueInt(&doc, "/continuous/traffic", 3);
-
+#endif
     XMLDoc_free(&doc);
 }
 
 Boolean Config_save(const char* filename)
 {
     XMLDoc saveDoc;
+    XMLNode* videoNode,* windowNode,* soundNode,* controlsNode,* keyconfigNode,* padconfigNode,*engineNode,*timeTrialNode,*continuousNode;
     XMLDoc_init(&saveDoc);
-    
     AddXmlHeader(&saveDoc);
 
-    XMLNode* videoNode = AddXmlFatherNode(&saveDoc, "video");
+    videoNode = AddXmlFatherNode(&saveDoc, "video");
     AddNodeInt(&saveDoc, videoNode, "mode",             Config_video.mode);
-    XMLNode* windowNode = AddNode(&saveDoc, videoNode, "window");
+    windowNode = AddNode(&saveDoc, videoNode, "window");
     AddNodeInt(&saveDoc, windowNode, "scale",           Config_video.scale);
     AddNodeInt(&saveDoc, videoNode, "scanlines",        Config_video.scanlines);
     AddNodeInt(&saveDoc, videoNode, "fps",              Config_video.fps);
     AddNodeInt(&saveDoc, videoNode, "widescreen",       Config_video.widescreen);
     AddNodeInt(&saveDoc, videoNode, "hires",            Config_video.hires);
 
-    XMLNode* soundNode = AddXmlFatherNode(&saveDoc, "sound");
+    soundNode = AddXmlFatherNode(&saveDoc, "sound");
     AddNodeInt(&saveDoc, soundNode, "enable",           Config_sound.enabled);
     AddNodeInt(&saveDoc, soundNode, "advertise",        Config_sound.advertise);
     AddNodeInt(&saveDoc, soundNode, "preview",          Config_sound.preview);
     AddNodeInt(&saveDoc, soundNode, "fix_samples",      Config_sound.fix_samples);
 
-    XMLNode* controlsNode = AddXmlFatherNode(&saveDoc, "controls");
+    controlsNode = AddXmlFatherNode(&saveDoc, "controls");
     AddNodeInt(&saveDoc, controlsNode, "gear",            Config_controls.gear);
     AddNodeInt(&saveDoc, controlsNode, "steerspeed",      Config_controls.steer_speed);
     AddNodeInt(&saveDoc, controlsNode, "pedalspeed",      Config_controls.pedal_speed);
 
-    XMLNode* keyconfigNode = AddNode(&saveDoc, controlsNode, "keyconfig");
+    keyconfigNode = AddNode(&saveDoc, controlsNode, "keyconfig");
     AddNodeInt(&saveDoc, keyconfigNode, "up",    Config_controls.keyconfig[0]);
     AddNodeInt(&saveDoc, keyconfigNode, "down",  Config_controls.keyconfig[1]);
     AddNodeInt(&saveDoc, keyconfigNode, "left",  Config_controls.keyconfig[2]);
@@ -343,7 +361,7 @@ Boolean Config_save(const char* filename)
     AddNodeInt(&saveDoc, keyconfigNode, "menu",  Config_controls.keyconfig[10]);
     AddNodeInt(&saveDoc, keyconfigNode, "view",  Config_controls.keyconfig[11]);
 
-    XMLNode* padconfigNode = AddNode(&saveDoc, controlsNode, "padconfig");
+    padconfigNode = AddNode(&saveDoc, controlsNode, "padconfig");
     AddNodeInt(&saveDoc, padconfigNode, "acc",   Config_controls.padconfig[0]);
     AddNodeInt(&saveDoc, padconfigNode, "brake", Config_controls.padconfig[1]);
     AddNodeInt(&saveDoc, padconfigNode, "gear1", Config_controls.padconfig[2]);
@@ -355,7 +373,7 @@ Boolean Config_save(const char* filename)
 
     AddNodeAttributeInt(&saveDoc, controlsNode, "analog", "enabled", Config_controls.analog);
 
-    XMLNode* engineNode = AddXmlFatherNode(&saveDoc, "engine");
+    engineNode = AddXmlFatherNode(&saveDoc, "engine");
     AddNodeInt(&saveDoc, engineNode, "time",            Config_engine.freeze_timer ? 4 : Config_engine.dip_time);
     AddNodeInt(&saveDoc, engineNode, "traffic",         Config_engine.disable_traffic ? 4 : Config_engine.dip_traffic);
     AddNodeInt(&saveDoc, engineNode, "japanese_tracks", Config_engine.jap);
@@ -363,23 +381,25 @@ Boolean Config_save(const char* filename)
     AddNodeInt(&saveDoc, engineNode, "levelobjects",    Config_engine.level_objects);
     AddNodeInt(&saveDoc, engineNode, "new_attract",     Config_engine.new_attract);
 
-    XMLNode* timeTrialNode = AddXmlFatherNode(&saveDoc, "time_trial");
+    timeTrialNode = AddXmlFatherNode(&saveDoc, "time_trial");
     AddNodeInt(&saveDoc, timeTrialNode, "laps",    Config_ttrial.laps);
     AddNodeInt(&saveDoc, timeTrialNode, "traffic", Config_ttrial.traffic);
     
-    XMLNode* continuousNode = AddXmlFatherNode(&saveDoc, "continuous");
+    continuousNode = AddXmlFatherNode(&saveDoc, "continuous");
     AddNodeInt(&saveDoc, continuousNode, "traffic", Config_cont_traffic);
 
+    {
     FILE* file = fopen(filename, "w");
 
-    if (!file)
-    {
+     if (!file)
+     {
         fprintf(stderr, "Error: can't open %s for save\n", filename);
         return FALSE;
-    }
+     }
 
-    XMLDoc_print(&saveDoc, file, "\n", "\t", FALSE, 0, 4);
-    fclose(file);
+     XMLDoc_print(&saveDoc, file, "\n", "\t", FALSE, 0, 4);
+     fclose(file);
+    }
     XMLDoc_free(&saveDoc);
 
     return TRUE;
@@ -400,13 +420,13 @@ void Config_load_scores(const char* filename)
     for (i = 0; i < HISCORE_NUM_SCORES; i++)
     {
         score_entry* e = &OHiScore_scores[i];
-        
         char basexmltag[64] = "/score";
+        char childtag[64];
+
         strcat(basexmltag, Utils_int_to_string(i));
         strcat(basexmltag, "/");
 
-        char childtag[64];
-
+   
         strcpy(childtag, basexmltag); strcat(childtag, "score");
         e->score = Utils_from_hex_string(GetXMLDocValueString(&doc, childtag, "0"));
 
@@ -443,7 +463,6 @@ void Config_save_scores(const char* filename)
     for (i = 0; i < HISCORE_NUM_SCORES; i++)
     {
         score_entry* e = &OHiScore_scores[i];
-
         char basexmltag[64] = "score";
         strcat(basexmltag, Utils_int_to_string(i));
 
@@ -456,16 +475,18 @@ void Config_save_scores(const char* filename)
         AddXmlChildNodeRootString(&saveDoc, "time", Utils_int_to_hex_string(e->time));
     }
 
-    FILE* file = fopen(filename, "w");
-
-    if (!file)
     {
+     FILE* file = fopen(filename, "w");
+
+     if (!file)
+     {
         fprintf(stderr, "Error: can't open %s for save\n", filename);
         return;
-    }
+     }
 
-    XMLDoc_print(&saveDoc, file, "\n", "\t", FALSE, 0, 4);
-    fclose(file);
+     XMLDoc_print(&saveDoc, file, "\n", "\t", FALSE, 0, 4);
+     fclose(file);
+    }
     XMLDoc_free(&saveDoc);
 }
 
@@ -488,14 +509,16 @@ void Config_load_tiletrial_scores()
         return;
     }
 
-    char basexmltag[64] = "/time_trial/score";
-    char childtag[64];
-
-    // Time Trial Scores
-    for (i = 0; i < 15; i++)
     {
+     char basexmltag[64] = "/time_trial/score";
+     char childtag[64];
+
+     // Time Trial Scores
+     for (i = 0; i < 15; i++)
+     {
         strcpy(childtag, basexmltag); strcat(childtag, Utils_int_to_string(i));
         Config_ttrial.best_times[i] = GetXMLDocValueInt(&doc, childtag, COUNTER_1M_15);
+     }
     }
 }
 
@@ -503,11 +526,12 @@ void Config_save_tiletrial_scores()
 {
     int i;
     XMLDoc saveDoc;
+    char scoreXmlTag[64];
+
     XMLDoc_init(&saveDoc);
     AddXmlHeader(&saveDoc);
     AddXmlFatherNode(&saveDoc, "time_trial");
 
-    char scoreXmlTag[64];
 
     for (i = 0; i < 15; i++)
     {
@@ -516,28 +540,30 @@ void Config_save_tiletrial_scores()
 
         AddXmlChildNodeRootString(&saveDoc, scoreXmlTag, Utils_int_to_string(Config_ttrial.best_times[i]));
     }
-    
-    const char* filename = Config_engine.jap ? FILENAME_TTRIAL_JAPAN : FILENAME_TTRIAL;
 
-    FILE* file = fopen(filename, "w");
-
-    if (!file)
     {
+     const char* filename = Config_engine.jap ? FILENAME_TTRIAL_JAPAN : FILENAME_TTRIAL;
+
+     FILE* file = fopen(filename, "w");
+
+     if (!file)
+     {
         fprintf(stderr, "Error: can't open %s for save\n", filename);
         return;
-    }
+     }
 
-    XMLDoc_print(&saveDoc, file, "\n", "\t", FALSE, 0, 4);
-    fclose(file);
+     XMLDoc_print(&saveDoc, file, "\n", "\t", FALSE, 0, 4);
+     fclose(file);
+    }
     XMLDoc_free(&saveDoc);
 }
 
 Boolean Config_clear_scores()
 {
+    int clear = 0;
+
     // Init Default Hiscores
     OHiScore_init_def_scores();
-
-    int clear = 0;
 
     // Remove XML files if they exist
     clear += remove(FILENAME_SCORES);

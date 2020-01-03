@@ -97,11 +97,12 @@ void OPalette_setup_sky_change()
 {
     int16_t i;
     uint32_t pal_addr = 0x120F00;
+    uint32_t stage_offset,src;
 
     for (i = 0; i <= 0x1F; i++)
         pal_manip[i] = Video_read_pal32(&pal_addr);
 
-    uint32_t stage_offset = ORoad_stage_lookup_off;
+    stage_offset = ORoad_stage_lookup_off;
 
     if (!(OInitEngine_end_stage_props & BIT_2))
         stage_offset += 8;
@@ -109,7 +110,7 @@ void OPalette_setup_sky_change()
     OInitEngine_end_stage_props &= ~BIT_2; // Denote setup_sky_change done
 
     // Address Of Sky Palette Entries for next stage
-    uint32_t src = TrackLoader_read_pal_sky_table(TrackLoader_get_level(stage_offset)->pal_sky);
+    src = TrackLoader_read_pal_sky_table(TrackLoader_get_level(stage_offset)->pal_sky);
 
     for (i = 0; i <= 0x1F; i++)
         pal_manip[i + 0x3E0] = TrackLoader_read32IncP(TrackLoader_pal_sky_data, &src);
@@ -148,6 +149,7 @@ void OPalette_setup_sky_cycle()
         return;
     }
 
+   {
     uint16_t offset = (sky_fade_offset - 1);
     uint32_t dst_addr = (sky_fade_offset - 1) + 0x40; // We pass the word offset here, even though original code is bytes, and using a long array
 
@@ -165,6 +167,7 @@ void OPalette_setup_sky_cycle()
         end_colour >>= 16;
     }
     OPalette_fade_sky_pal_entry(start_colour, end_colour, dst_addr);    
+   }
  }
 
  //D15 : Shade hi/lo
@@ -204,6 +207,7 @@ void OPalette_fade_sky_pal_entry(const uint16_t start_colour, const uint16_t end
     g1 <<= 6;
     b1 <<= 6;
     
+  {  
     // END COLOUR
     // Extract bits 1-4
     uint16_t r2 = (end_colour & 0xF);
@@ -229,30 +233,32 @@ void OPalette_fade_sky_pal_entry(const uint16_t start_colour, const uint16_t end
         r1 += r2;
         g1 += g2;
         b1 += b2;
+	{
+         uint16_t r_bak = r1;
+         uint16_t g_bak = g1;
+         uint16_t b_bak = b1;
 
-        uint16_t r_bak = r1;
-        uint16_t g_bak = g1;
-        uint16_t b_bak = b1;
+         // new value!
+         uint16_t rgb = (((r1 >> 6) & 1) << 12) | (((g1 >> 6) & 1) << 13) | (((b1 >> 6) & 1) << 14); // bit 0
+         r1 = ((r1 >> 7) & 0xF);
+         g1 = ((g1 >> 7) & 0xF) << 4;
+         b1 = ((b1 >> 7) & 0xF) << 8;
+         rgb |= r1 | g1 | b1;
 
-        // new value!
-        uint16_t rgb = (((r1 >> 6) & 1) << 12) | (((g1 >> 6) & 1) << 13) | (((b1 >> 6) & 1) << 14); // bit 0
-        r1 = ((r1 >> 7) & 0xF);
-        g1 = ((g1 >> 7) & 0xF) << 4;
-        b1 = ((b1 >> 7) & 0xF) << 8;
-        rgb |= r1 | g1 | b1;
-
-        // Hack due to using longs
-        if (addr & 1)
+         // Hack due to using longs
+         if (addr & 1)
             pal_manip[addr >> 1] = (pal_manip[addr >> 1] & 0xFFFF0000) | rgb;
-        else
+         else
             pal_manip[addr >> 1] = (pal_manip[addr >> 1] & 0xFFFF) | (rgb << 16);
 
-        addr += 0x40; // another hack
+         addr += 0x40; // another hack
 
-        r1 = r_bak;
-        g1 = g_bak;
-        b1 = b_bak;
+         r1 = r_bak;
+         g1 = g_bak;
+         b1 = b_bak;
+	}
     }
+   }
 }
 
 // - Cycle sky palette colours on level transition.
@@ -263,13 +269,17 @@ void OPalette_fade_sky_pal_entry(const uint16_t start_colour, const uint16_t end
 void OPalette_cycle_sky_palette()
 {
     int16_t i;
+    uint8_t d0,d1;
+    uint16_t pal_index;
+    uint32_t pal_addr;
+
     if (!(sky_palette_init & BIT_1)) return;
     
-    uint8_t d0 = ++cycle_counter;
-    uint8_t d1 = d0 - 1;
+    d0 = ++cycle_counter;
+    d1 = d0 - 1;
     if (!((d0 ^ d1) & 1)) return;
 
-    uint16_t pal_index = ++sky_palette_index;
+    pal_index = ++sky_palette_index;
 
     // Cleanup and finish if we've iterated through all 0x20 palettes
     if (pal_index >= 0x20)
@@ -285,7 +295,7 @@ void OPalette_cycle_sky_palette()
     // Note that this aligns the palette to memory addresses at blocks of 0x80 bytes. (or 4*1F Longs)
     pal_index <<= 5;
 
-    uint32_t pal_addr = 0x120F00; // dst
+    pal_addr = 0x120F00; // dst
 
     for (i = 0; i <= 0x1F; i++)
         Video_write_pal32IncP(&pal_addr, pal_manip[i + pal_index]);
@@ -300,7 +310,7 @@ void OPalette_cycle_sky_palette()
 // Source: 0x91F8
 void OPalette_fade_palette()
 {
-    uint16_t i;
+    uint16_t i,offset=0;
     if (!(OPalette_pal_manip_ctrl & BIT_0)) return;
 
     if (Outrun_game_state != GS_ATTRACT && Outrun_game_state != GS_INGAME) return;
@@ -312,7 +322,6 @@ void OPalette_fade_palette()
     }
 
     // do_next_fade:
-    uint16_t offset = 0;
     for (i = 0; i < 0x18; i++)
     {
         pal_fade[offset + 3] += pal_fade[offset + 6]; // Adjust blue fade entry
@@ -436,6 +445,8 @@ void OPalette_write_next_pal_to_ram()
     int16_t i;
     uint32_t dst = 2;
     uint32_t stage_offset = ORoad_stage_lookup_off;
+    uint32_t ground_pal_addr;
+    Level *next_level;
 
     if (!(OInitEngine_end_stage_props & BIT_1))
         stage_offset += 8;
@@ -443,7 +454,7 @@ void OPalette_write_next_pal_to_ram()
     OInitEngine_end_stage_props &= ~BIT_1; 
 
     // Lookup palette entry from the road seg table based on route chosen
-    Level *next_level = TrackLoader_get_level(stage_offset);
+    next_level = TrackLoader_get_level(stage_offset);
 
     // road palette
     pal_fade[dst] = next_level->palr1.road >> 16;             dst += 9;
@@ -460,7 +471,7 @@ void OPalette_write_next_pal_to_ram()
     pal_fade[dst] = next_level->palr1.stripe_centre & 0xFFFF; dst += 9;
     
     // Ground Palette Entries (Index to table below)
-    uint32_t ground_pal_addr = TrackLoader_read_pal_gnd_table(next_level->pal_gnd);
+    ground_pal_addr = TrackLoader_read_pal_gnd_table(next_level->pal_gnd);
 
     for (i = 0; i <= 15; i++)
     {
@@ -497,11 +508,13 @@ void OPalette_write_next_pal_to_ram()
 
 void OPalette_repack_rgb(const uint32_t addr)
 {
+    uint16_t d0,d1;
+
     pal_fade[addr + 1] = 0;
     
     // Pack BLUE bits
-    uint16_t d0 = (pal_fade[addr + 3] >> 3) & 0xF00;
-    uint16_t d1 = (pal_fade[addr + 3] << 4) & 0x4000;
+    d0 = (pal_fade[addr + 3] >> 3) & 0xF00;
+    d1 = (pal_fade[addr + 3] << 4) & 0x4000;
     pal_fade[addr + 1] |= (d0 | d1);
     // Pack GREEN bits
     d0 = (pal_fade[addr + 4] >> 7) & 0xF0;

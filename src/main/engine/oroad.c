@@ -497,9 +497,10 @@ void ORoad_setup_road_x()
     // If moved to next chunk of road data, setup x positions
     if (ORoad_road_pos_change != 0)
     {
+        uint32_t addr;
         ORoad_road_data_offset = (ORoad_road_pos >> 16) << 2;
         //uint32_t addr = stage_addr + road_data_offset;
-        uint32_t addr = ORoad_road_data_offset; // temporary hack for custom data
+        addr = ORoad_road_data_offset; // temporary hack for custom data
         ORoad_set_tilemap_x(addr);
         ORoad_setup_x_data(addr);
     }
@@ -534,6 +535,7 @@ void ORoad_setup_x_data(uint32_t addr)
         ORoad_road_x[i++] = 0x3210;
     }
 
+   {
     // Now We Setup The Real Road Data at 60800
     int32_t curve_x_total = 0;
     int32_t curve_y_total = 0;
@@ -551,6 +553,9 @@ void ORoad_setup_x_data(uint32_t addr)
     {
         const int32_t x_next = TrackLoader_readPath(addr)     + TrackLoader_readPath(addr + 4); // Length 1
         const int32_t y_next = TrackLoader_readPath(addr + 2) + TrackLoader_readPath(addr + 6); // Length 2
+	int32_t xinc;
+	int16_t x,curve_steps;
+
         addr += 8;
 
         curve_x_total += x_next;
@@ -558,13 +563,13 @@ void ORoad_setup_x_data(uint32_t addr)
 
         // Calculate curve increment and end position
         ORoad_create_curve(&curve_inc, &curve_end, curve_x_total, curve_y_total, curve_x_dist, curve_y_dist);
-        int16_t curve_steps = curve_end - curve_start;
+        curve_steps = curve_end - curve_start;
         if (curve_steps < 0) return;
         if (curve_steps == 0) continue; // skip_pos
 
         // X Amount to increment curve by each iteration
-        int32_t xinc = (curve_inc - curve_inc_old) / curve_steps;
-        int16_t x = curve_inc_old;
+        xinc = (curve_inc - curve_inc_old) / curve_steps;
+        x = curve_inc_old;
 
         for (pos = curve_start; pos <= curve_end; pos++)
         {
@@ -577,6 +582,7 @@ void ORoad_setup_x_data(uint32_t addr)
         curve_inc_old = curve_inc;
         curve_start = curve_end;
     }
+   }
 }
 
 // Interpolates road data into a smooth curve.
@@ -590,9 +596,10 @@ void ORoad_create_curve(
     // Note multiplication result should be 32bit, inputs 16 bit
     int32_t d0 = ((curve_x_total >> 5) * curve_y_dist) - ((curve_y_total >> 5) * curve_x_dist);
     int32_t d2 = ((curve_x_total >> 5) * curve_x_dist) + ((curve_y_total >> 5) * curve_y_dist);
+    int32_t d1;
 
     d2 >>= 7;        
-    int32_t d1 = (d2 >> 7) + 0x410;     
+    d1 = (d2 >> 7) + 0x410;     
 
     *curve_inc = d0 / d1;        // Total amount to increment x by
     *curve_end = (d2 / d1) * 4;
@@ -619,12 +626,14 @@ void ORoad_set_tilemap_x(uint32_t addr)
     x += TrackLoader_readPathIncP(&addr);
     y += TrackLoader_readPathIncP(&addr);
 
+   {
     int16_t x_abs = x;
     int16_t y_abs = y;
+    int16_t scroll_x;
+
     if (x_abs < 0) x_abs = -x_abs;
     if (y_abs < 0) y_abs = -y_abs;
 
-    int16_t scroll_x;
 
     // scroll right
     if (y_abs > x_abs)
@@ -654,6 +663,7 @@ void ORoad_set_tilemap_x(uint32_t addr)
     }
 
     ORoad_tilemap_h_target = scroll_x;
+   }
 }
 
 // Creates the bend in the next section of road.
@@ -722,14 +732,14 @@ void ORoad_do_road_offset(int16_t* dst_x, int16_t width, Boolean invert)
         car_offset <<= 7;
         for (i = 0; i <= 0x1FF; i++)
         {
-            int16_t h_scroll = scanline_inc >> 16;
+            int16_t x_off,h_scroll = scanline_inc >> 16;
 
             // If ignore car position
             if (*src_x == 0x3210)
                 h_scroll = 0;
 
             // Get next line of road x data
-            int16_t x_off = (*src_x++) >> 6;
+            x_off = (*src_x++) >> 6;
 
             if (!invert)
                 h_scroll += x_off;
@@ -856,6 +866,7 @@ void ORoad_setup_road_y()
 // Source Address: 0x1BCE
 void ORoad_init_height_seg()
 {
+    uint32_t h_addr;
     height_index = 0;         // Set to first entry in height segment
     height_inc   = 0;         // Do not increment to next segment
     elevation    = NO_CHANGE; // No Change to begin with
@@ -863,7 +874,7 @@ void ORoad_init_height_seg()
 
     // Get Address of actual road height data
     ORoad_height_lookup_wrk = ORoad_height_lookup;
-    uint32_t h_addr = TrackLoader_read_heightmap_table(ORoad_height_lookup_wrk);
+    h_addr = TrackLoader_read_heightmap_table(ORoad_height_lookup_wrk);
 
     height_ctrl2 = TrackLoader_read8IncP(TrackLoader_heightmap_data, &h_addr);
     step_adjust  = TrackLoader_read8IncP(TrackLoader_heightmap_data, &h_addr); // Speed at which to move through height segment
@@ -917,18 +928,20 @@ void ORoad_init_elevation(uint32_t* addr)
 
 void ORoad_do_elevation()
 {
+    uint16_t d1,d3;
+
     // By Default: One Height Entry Per Two Road Positions 
     // Potential advance stage of height map we're on 
     height_step += pos_fine_diff * 12;
 
     // Adjust the speed at which we transverse elevation sections of the height map
-    uint16_t d3 = step_adjust;
+    d3 = step_adjust;
     if (elevation == UP)
         d3 *= up_mult;
     else if (elevation == DOWN)
         d3 *= down_mult;
 
-    uint16_t d1 = (height_step / d3);
+    d1 = (height_step / d3);
     if (d1 > 0xFF) d1 = 0xFF;
     d1 += 0x100;
 
@@ -1141,8 +1154,9 @@ void ORoad_init_horizon_adjust(uint32_t* addr)
 
 void ORoad_do_horizon_adjust()
 {
+    uint16_t d1;
     height_step += pos_fine_diff * 12;
-    uint16_t d1 = (height_step / step_adjust);
+    d1 = (height_step / step_adjust);
 
     // Scale height between 100 and 1FF
     if (d1 > 0xFF) d1 = 0xFF;
@@ -1192,12 +1206,15 @@ void ORoad_set_y_interpolate()
 
     uint16_t d2 = height_end;
     uint16_t d1 = 0x1FF - d2;
+    uint16_t d3;
+    int16_t  next_height_value;
+    int32_t horizon_copy;
 
     section_lengths[0] = d1;
     d2 >>= 1;
     section_lengths[1] = d2;    
     
-    uint16_t d3 = 0x200 - d1 - d2;
+    d3 = 0x200 - d1 - d2;
     section_lengths[3] = d3;
     d3 >>= 1;
     section_lengths[2] = d3;
@@ -1234,11 +1251,11 @@ void ORoad_set_y_interpolate()
     ORoad_road_unk[a3_o++] = 0;
     counter = 0; // Reset interpolated counter index to 0
 
-    const int16_t next_height_value = TrackLoader_read16(TrackLoader_heightmap_data, a1_lookup);
+    next_height_value = TrackLoader_read16(TrackLoader_heightmap_data, a1_lookup);
     height_final = (next_height_value * (height_start - 0x100)) >> 4;
 
     // 1faa 
-    int32_t horizon_copy = (ORoad_horizon_base + horizon_offset) << 4;
+    horizon_copy = (ORoad_horizon_base + horizon_offset) << 4;
     if (height_ctrl2 == 2)  // hold state
         horizon_copy += height_final;
 
@@ -1254,6 +1271,8 @@ void ORoad_set_y_interpolate()
 void ORoad_set_y_2044()
 {
     uint16_t i;
+    int16_t section_length,y;
+
     if (change_per_entry > 0x10000)
         change_per_entry = 0x10000;
 
@@ -1262,7 +1281,7 @@ void ORoad_set_y_2044()
     // ------------------------------------------------------------------------
     // Get length of this road section in scanlines
     // ------------------------------------------------------------------------
-    int16_t section_length = section_lengths[length_offset++] - 1;
+    section_length = section_lengths[length_offset++] - 1;
     scanline -= section_length;
 
     // ------------------------------------------------------------------------
@@ -1292,7 +1311,7 @@ void ORoad_set_y_2044()
     // Writing last part of interpolated data
     ORoad_road_unk[a3_o] = 0;
 
-    int16_t y = TrackLoader_read16(TrackLoader_heightmap_data, a1_lookup);
+    y = TrackLoader_read16(TrackLoader_heightmap_data, a1_lookup);
 
     // Return if not end at end of height section data
     if (y != -1) return;
@@ -1343,6 +1362,7 @@ void ORoad_read_next_height()
     // Writing first part of interpolated data
     change_per_entry -= height_final;
 
+   {
     int32_t horizon_shift = (ORoad_horizon_base + horizon_offset) << 4;
 
     if (horizon_shift == change_per_entry)
@@ -1359,11 +1379,13 @@ void ORoad_read_next_height()
         elevation = DOWN;
         ORoad_set_elevation();
     }
+   }
 }
 
 // Source Address: 0x2028
 void ORoad_set_elevation()
 {
+    int32_t total_height_wrk;
     // d2: h
     // d3: total_height
     // d4: scanline
@@ -1381,7 +1403,7 @@ void ORoad_set_elevation()
         d5_o = -d5_o;
 
     ORoad_road_unk[a3_o++] = scanline;
-    int32_t total_height_wrk = total_height;
+    total_height_wrk = total_height;
     if (total_height_wrk < 0)
         total_height_wrk = -total_height_wrk;
     total_height_wrk <<= 4;
@@ -1401,14 +1423,14 @@ void ORoad_set_y_horizon()
     
     int32_t d1 = (horizon_mod * (height_start - 0x100)) >> 4;
     int32_t d2 = ((ORoad_horizon_base + horizon_offset) << 4) + d1;
-    
+    uint32_t d0;
     uint32_t total_height = 0;
 
     // write_next_y:
     for (  i = 0; i <= 0x1FF; i++) // (1FF height positions)
     {
         total_height += d2;
-        uint32_t d0 = (total_height << 4) >> 16;
+        d0 = (total_height << 4) >> 16;
         ORoad_road_y[--a0] = d0;
     }
 
@@ -1445,9 +1467,13 @@ void ORoad_set_horizon_y()
     while (TRUE)
     {
         int16_t d0 = ORoad_road_unk[road_int];
+	int16_t d1,d2,d3,d4,d6,d7,d5;
+	uint16_t a2;
+	int32_t d2l,d1l,d3l;
+
         if (d0 == 0) break;
-        int16_t d7 = d0 >> 3;
-        int16_t d6 = (d7 + d0) - 0x1FF;
+        d7 = d0 >> 3;
+        d6 = (d7 + d0) - 0x1FF;
 
         if (d6 > 0)
         {
@@ -1459,15 +1485,15 @@ void ORoad_set_horizon_y()
         // 13e6
         d6 = d7 >> 1; 
         if (d6 <= 2) break;
-        int16_t d1 = d0 - d6;
-        int16_t d2 = d0;
-        int16_t d3 = d0 + d6;
-        int16_t d4 = d0 + d7;
+        d1 = d0 - d6;
+        d2 = d0;
+        d3 = d0 + d6;
+        d4 = d0 + d7;
 
         // 1402: Chris - made some edits below here, seems to go rather wrong from here onwards
         d0 -= d7;
-        int16_t d5 = d0;
-        uint16_t a2 = road_y_addr + d5;
+        d5 = d0;
+        a2 = road_y_addr + d5;
         
         d0 = ORoad_road_y[road_y_addr + d0];
         d1 = ORoad_road_y[road_y_addr + d1];
@@ -1478,11 +1504,11 @@ void ORoad_set_horizon_y()
         // 1426:
         d5 = d0;
         
-        int32_t d2l = (d2 + d0 + d4) * 0x5555; // turn d2 into a long
+        d2l = (d2 + d0 + d4) * 0x5555; // turn d2 into a long
         d2l >>= 16;
-        int32_t d1l = (d1 + d0 + (int16_t) d2l) * 0x5555; // turn d2 into a long
+        d1l = (d1 + d0 + (int16_t) d2l) * 0x5555; // turn d2 into a long
         d1l >>= 16;
-        int32_t d3l = (d3 + d4 + (int16_t) d2l) * 0x5555;
+        d3l = (d3 + d4 + (int16_t) d2l) * 0x5555;
         d3l >>= 16;
 
         d0 -=  (int16_t) d1l;
@@ -1530,8 +1556,10 @@ void ORoad_set_horizon_y()
     // Set Horizon Y Position
     // ------------------------------------------------------------------------
 
-    int16_t y_pos = ORoad_road_y[ORoad_road_p3] >> 4;
-    ORoad_horizon_y2 = -y_pos + 224;
+    {
+     int16_t y_pos = ORoad_road_y[ORoad_road_p3] >> 4;
+     ORoad_horizon_y2 = -y_pos + 224;
+    }
 }
 
 // Parse Road Scanline Data.
@@ -1564,9 +1592,9 @@ void ORoad_do_road_data()
     int16_t src_this = ORoad_road_y[--addr_src] >> 4; // source entry #1 / 16 [d0]
     int16_t src_next = 0;                       // [d4]
     int16_t write_priority = 0;                 // [d5]
+    int16_t scanline = 254; //  Loop counter #2 (Scanlines) - Start at bottom of screen
 
     ORoad_road_y[--addr_dst] = rom_line_select; // Write source entry counter to a0 / destination
-    int16_t scanline = 254; //  Loop counter #2 (Scanlines) - Start at bottom of screen
 
     // ------------------------------------------------------------------------
     // Draw normal road

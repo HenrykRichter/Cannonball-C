@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _INC_MAIN_ENGINE_SOUND_OSOUND_H
+#define _INC_MAIN_ENGINE_SOUND_OSOUND_H
 
 #include "stdint.h"
 #include "globals.h"
@@ -219,3 +220,5 @@ extern uint8_t OSound_engine_data[8];
 void OSound_init(uint8_t* pcm_ram);
 void OSound_init_fm_chip();
 void OSound_tick();
+
+#endif

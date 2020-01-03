@@ -8,8 +8,8 @@
     Copyright Chris White.
     See license.txt for more details.
 ***************************************************************************/
-
-#pragma once
+#ifndef _INC_SRC_MAIN_ENGINE_OSTATS_H
+#define _INC_SRC_MAIN_ENGINE_OSTATS_H
 
 #include "outrun.h"
 
@@ -121,4 +121,4 @@ void OStats_do_timers();
 void OStats_convert_speed_score(uint16_t);
 void OStats_update_score(uint32_t);
 void OStats_init_next_level();
-
+#endif

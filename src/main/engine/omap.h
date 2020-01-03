@@ -11,8 +11,8 @@
     Copyright Chris White.
     See license.txt for more details.
 ***************************************************************************/
-
-#pragma once
+#ifndef _INC_SRC_MAIN_ENGINE_OMAP_H
+#define _INC_SRC_MAIN_ENGINE_OMAP_H
 
 #include "outrun.h"
 
@@ -26,3 +26,4 @@ void OMap_blit();
 void OMap_load_sprites();
 void OMap_draw_course_map();
 void OMap_position_ferrari(uint8_t index);
+#endif
